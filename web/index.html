@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Bridge</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <script src="https://code.iconify.design/iconify-icon/2.3.0/iconify-icon.min.js"></script>
+  <script>
+    tailwind.config = { theme: { extend: {
+      fontFamily: { sans: ['Pretendard', 'system-ui', 'sans-serif'] },
+      colors: { accent: '#f2b84b' },
+    } } };
+  </script>
+  <style>
+    body { word-break: keep-all; }
+    [hidden] { display: none !important; }
+    .jamo { transition: transform .35s cubic-bezier(.16,1,.3,1), background-color .2s, opacity .2s; }
+    .jamo.now { transform: translateY(-4px); }
+    @media (prefers-reduced-motion: reduce) { .jamo { transition: none; } }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 font-sans min-h-[100dvh]">
+  <header class="border-b border-white/10">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3">
+      <div class="flex items-center gap-2 mr-auto">
+        <iconify-icon icon="solar:hand-stars-linear" class="text-accent text-2xl"></iconify-icon>
+        <span class="font-bold tracking-tight">Sign Bridge</span>
+        <span class="text-xs text-zinc-500">14조</span>
+      </div>
+      <nav class="flex gap-1 bg-white/5 border border-white/10 rounded-full p-1 text-sm" id="tabs">
+        <button data-tab="express" class="tab px-4 py-1.5 rounded-full">표현</button>
+        <button data-tab="learn" class="tab px-4 py-1.5 rounded-full">학습</button>
+        <button data-tab="quiz" class="tab px-4 py-1.5 rounded-full">맞히기</button>
+        <button data-tab="dash" class="tab px-4 py-1.5 rounded-full">대시보드</button>
+      </nav>
+      <span id="conn" class="text-xs px-2.5 py-1 rounded-full border"></span>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    <!-- 표현 모드 (F-01, F-02, F-09) -->
+    <section data-view="express" class="view grid gap-6">
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold tracking-tight leading-snug">단어를 입력하면 AI Hand가 지문자로 보여 줍니다</h1>
+        <p class="text-zinc-400 mt-1">2~3글자 단어를 추천합니다. 자모 하나에 1~2초 걸려요.</p>
+      </div>
+      <form id="expressForm" class="flex flex-wrap gap-2">
+        <label for="wordInput" class="sr-only">단어</label>
+        <input id="wordInput" autocomplete="off" placeholder="예: 사랑" maxlength="10"
+          class="flex-1 min-w-[12rem] bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-lg focus:outline-none focus:border-accent">
+        <button type="button" id="micBtn" class="flex items-center gap-2 px-4 py-3 rounded-xl border border-white/10 hover:bg-white/5 focus-visible:outline focus-visible:outline-accent">
+          <iconify-icon icon="solar:microphone-3-linear" class="text-xl"></iconify-icon><span id="micLabel">음성 입력</span>
+        </button>
+        <button id="expressBtn" class="flex items-center gap-2 px-6 py-3 rounded-xl bg-accent text-zinc-950 font-semibold hover:scale-[1.02] active:scale-[0.98] transition focus-visible:outline focus-visible:outline-white disabled:opacity-40 disabled:hover:scale-100">
+          <iconify-icon icon="solar:play-bold" class="text-lg"></iconify-icon>보여 주기
+        </button>
+      </form>
+      <p id="expressMsg" class="text-sm text-zinc-400 min-h-[1.25rem]" role="status"></p>
+      <div id="strip" class="flex flex-wrap gap-2"></div>
+      <div id="stage" class="grid md:grid-cols-[1.2fr_1fr] gap-4"></div>
+    </section>
+
+    <!-- 학습 모드 (F-05, F-06, F-07) -->
+    <section data-view="learn" class="view grid gap-6" hidden>
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold tracking-tight leading-snug">배울 글자를 고르세요</h1>
+        <p class="text-zinc-400 mt-1">AI Hand가 시범을 보이면 카메라 앞에서 같은 손 모양을 만들어 보세요.</p>
+      </div>
+      <div id="letterGrid" class="grid grid-cols-7 sm:grid-cols-10 lg:grid-cols-[repeat(15,minmax(0,1fr))] gap-2"></div>
+      <ol id="learnSteps" class="flex flex-wrap gap-2 text-sm"></ol>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="relative aspect-video rounded-2xl overflow-hidden bg-white/5 border border-white/10 max-w-full">
+          <video id="cam" autoplay playsinline muted class="w-full h-full object-cover -scale-x-100"></video>
+          <p id="camMsg" class="absolute inset-0 grid place-items-center text-zinc-500 text-sm p-4 text-center">글자를 고르면 카메라가 켜집니다</p>
+        </div>
+        <div id="learnResult" class="rounded-2xl border border-white/10 p-6 grid place-items-center text-center min-h-[12rem]"></div>
+      </div>
+    </section>
+
+    <!-- 맞히기 (S-04) -->
+    <section data-view="quiz" class="view grid gap-6" hidden>
+      <div>
+        <h1 class="text-2xl md:text-3xl font-bold tracking-tight leading-snug">AI Hand가 보여 준 단어를 맞혀 보세요</h1>
+        <p class="text-zinc-400 mt-1">손 모양을 잘 보고 아래 보기에서 고르면 됩니다.</p>
+      </div>
+      <div><button id="quizBtn" class="flex items-center gap-2 px-6 py-3 rounded-xl bg-accent text-zinc-950 font-semibold hover:scale-[1.02] active:scale-[0.98] transition disabled:opacity-40">
+        <iconify-icon icon="solar:refresh-linear" class="text-lg"></iconify-icon>문제 받기</button></div>
+      <p id="quizMsg" class="text-zinc-300 min-h-[1.5rem]" role="status"></p>
+      <div id="quizChoices" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+    </section>
+
+    <!-- 대시보드 (F-08, S-05) -->
+    <section data-view="dash" class="view grid gap-6" hidden>
+      <div class="flex flex-wrap items-end gap-3">
+        <div class="mr-auto">
+          <h1 class="text-2xl md:text-3xl font-bold tracking-tight">대시보드</h1>
+          <p class="text-zinc-400 mt-1">AI Hand 상태와 연습 기록</p>
+        </div>
+        <button id="clearLog" class="flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg border border-white/10 hover:bg-white/5">
+          <iconify-icon icon="solar:trash-bin-2-linear"></iconify-icon>기록 지우기</button>
+      </div>
+      <div id="hands" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+      <div id="stats" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+      <div class="overflow-x-auto rounded-2xl border border-white/10">
+        <table class="w-full text-sm tabular-nums">
+          <thead class="text-zinc-400 text-left"><tr>
+            <th class="px-4 py-2 font-medium">시각</th><th class="px-4 py-2 font-medium">구분</th>
+            <th class="px-4 py-2 font-medium">내용</th><th class="px-4 py-2 font-medium">처리 시간</th><th class="px-4 py-2 font-medium">결과</th></tr></thead>
+          <tbody id="logBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="hangul.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
