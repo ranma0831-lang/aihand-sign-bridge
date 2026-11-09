@@ -1,10 +1,12 @@
 // ⑥ 설정: 손 방향·역할, 자모별 담당 손과 손가락 각도, 표현 불가 글자, 속도, 카메라·음성
 import { PageHead } from '../components/Shell.jsx';
 import { Card, CardTitle, Icon } from '../components/ui.jsx';
-import { JAMO_ALL } from '../lib/hangul.js';
+import { SIGN_KEYS } from '../lib/hangul.js';
+import { SIGNS } from '../lib/signs.js';
 import { DIRS, useSystem } from '../lib/store.jsx';
 
-const FINGERS = ['엄지', '검지', '중지', '약지', '소지'];
+const FINGERS = ['엄지', '검지', '중지', '약지', '소지', '손목'];
+const KEYS = [...SIGN_KEYS, '칭찬', '쉼'];
 
 export default function Settings() {
   const { settings: s, updateSettings, resetSettings, toast } = useSystem();
@@ -16,7 +18,7 @@ export default function Settings() {
     screenOnly: v === 'screen' ? [...new Set([...p.screenOnly, j])] : p.screenOnly.filter((x) => x !== j),
   }));
   const setAngle = (j, k, v) => updateSettings((p) => ({
-    angles: { ...p.angles, [j]: p.angles[j].map((a, i) => (i === k ? Math.max(0, Math.min(180, Number(v) || 0)) : a)) },
+    angles: { ...p.angles, [j]: (p.angles[j] ?? [90, 90, 90, 90, 90, 90]).map((a, i) => (i === k ? Math.max(0, Math.min(180, Number(v) || 0)) : a)) },
   }));
 
   function exportJson() {
@@ -82,16 +84,16 @@ export default function Settings() {
 
         <Card className="lg:col-span-12 !p-0 overflow-hidden">
           <div className="px-6 pt-5">
-            <CardTitle icon="list-linear" right={<span className="text-xs text-mute">각도는 임시값입니다 · 역할 2 각도표로 교체</span>}>자모별 담당 손과 손가락 각도 (0~180°)</CardTitle>
+            <CardTitle icon="list-linear" right={<span className="text-xs text-mute">교재 사진 기준 추정값 · 실제 손으로 확인하며 고치세요</span>}>글자별 담당 손과 각도 (0~180°)</CardTitle>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm num">
               <thead className="text-mute text-left"><tr>
-                <th className="px-6 py-2 font-medium">자모</th><th className="px-3 py-2 font-medium">담당</th>
+                <th className="px-6 py-2 font-medium">자모</th><th className="px-3 py-2 font-medium">담당</th><th className="px-3 py-2 font-medium whitespace-nowrap">사진 기준 모양</th>
                 {FINGERS.map((f) => <th key={f} className="px-2 py-2 font-medium">{f}</th>)}
               </tr></thead>
               <tbody>
-                {JAMO_ALL.map((j) => {
+                {KEYS.map((j) => {
                   const screen = s.screenOnly.includes(j);
                   return (
                     <tr key={j} className={`border-t border-black/5 ${screen ? 'opacity-60' : ''}`}>
@@ -102,9 +104,12 @@ export default function Settings() {
                           <option value="screen">화면(표현 불가)</option>
                         </select>
                       </td>
+                      <td className="px-3 py-1.5 text-xs text-mute min-w-40" title={SIGNS[j]?.note}>
+                        {SIGNS[j] ? `${SIGNS[j].dir}${SIGNS[j].back ? ' · 손등' : ''}${SIGNS[j].note ? ` · ${SIGNS[j].note}` : ''}` : '두 손·움직임'}
+                      </td>
                       {FINGERS.map((f, k) => (
                         <td key={f} className="px-2 py-1.5">
-                          <input type="number" min="0" max="180" aria-label={`${j} ${f} 각도`} value={s.angles[j][k]} disabled={screen}
+                          <input type="number" min="0" max="180" aria-label={`${j} ${f} 각도`} value={s.angles[j]?.[k] ?? 90} disabled={screen}
                             onChange={(e) => setAngle(j, k, e.target.value)} className="field !py-1.5 !px-2 !rounded-xl w-16" />
                         </td>
                       ))}

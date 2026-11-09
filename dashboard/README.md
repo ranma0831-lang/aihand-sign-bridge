@@ -20,6 +20,21 @@ npm run build      # dist/ 에 배포용 파일
 - 카메라와 마이크는 `localhost`나 `https`에서만 권한을 받을 수 있습니다.
 - Tailwind는 v3(PostCSS)을 씁니다. v4의 네이티브 스캐너는 이 PC의 Windows 앱 제어 정책에 막혀서 스타일이 생성되지 않았습니다.
 
+## 실제 AI Hand 연결 (블루투스, 중앙 서버 없이 시험)
+
+예제 5.6(앱 제어)과 같은 방식입니다. micro:bit 시리얼은 확장 보드(서보) 전용이라, PC 명령은 블루투스로 받습니다.
+
+1. makecode.microbit.org → 새 프로젝트
+2. **Extensions**: `https://github.com/Hiwonder/StartbitV2` 추가, `bluetooth` 추가 (radio를 지우라고 하면 지움)
+3. **톱니바퀴 → 프로젝트 설정** → `No Pairing Required: Anyone can connect via Bluetooth` 켜기 → 저장
+4. **JavaScript** 탭에 [`firmware/aihand-receiver.ts`](../firmware/aihand-receiver.ts)를 붙여 넣고 Download → MICROBIT 드라이브에 넣기
+5. 확장 보드 전원 **ON** → micro:bit에 ✓ → **A 버튼 = 엄지 척, B 버튼 = 손 펴기**로 서보부터 확인
+6. 크롬 대시보드 → **개별 제어** → `블루투스로 실제 손 연결` → `BBC micro:bit [....]` 선택 → micro:bit에 ♥가 뜨면 연결됨
+7. 글자를 골라 `테스트` → 손 카드의 "micro:bit 응답"이 `OK`면 정상. 표현·학습 화면에서도 같이 움직입니다.
+
+보내는 형식: `엄지,검지,중지,약지,소지,손목,시간ms$` 예) `50,50,50,50,50,90,500$`
+손 모양 기본값은 `src/lib/signs.js`(교재 지문자·지숫자 사진을 보고 읽은 표)에서 나옵니다. 실제 손으로 테스트하며 **설정** 화면에서 각도를 고치고, `JSON 내보내기`로 팀원과 공유하세요.
+
 ## 화면 (기획안 번호)
 
 | 화면 | 주소 | 내용 |

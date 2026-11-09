@@ -2,7 +2,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { PageHead } from '../components/Shell.jsx';
 import { Card, CardTitle, Icon, Pill, Ring } from '../components/ui.jsx';
-import { BASIC } from '../lib/hangul.js';
+import { BASIC, NUMBERS } from '../lib/hangul.js';
+
+const LETTERS = [...BASIC, ...NUMBERS.slice(1)]; // 지문자 + 지숫자 1~9
 import { useBusEvent, useSystem } from '../lib/store.jsx';
 
 const STEPS = [['demo', '시범 보기'], ['follow', '따라 하기'], ['result', '결과']];
@@ -58,7 +60,7 @@ export default function Learn() {
         <Card className="lg:col-span-8">
           <CardTitle icon="book-bookmark-linear" right={<span className="text-xs text-mute">점선 = 화면 그림으로 시범</span>}>배울 글자</CardTitle>
           <div className="grid grid-cols-6 sm:grid-cols-10 gap-2">
-            {BASIC.map((j) => (
+            {LETTERS.map((j) => (
               <button key={j} onClick={() => pick(j)} aria-pressed={target === j}
                 className={`relative aspect-square rounded-2xl text-xl font-bold border transition
                   ${target === j ? 'bg-ink text-white border-ink' : 'bg-white/70 border-black/10 hover:border-ink'}
@@ -72,7 +74,7 @@ export default function Learn() {
 
         <Card dark className="lg:col-span-4 flex flex-col items-center gap-4">
           <CardTitle icon="medal-ribbons-star-linear">학습 진행</CardTitle>
-          <Ring dark value={Math.round((learned.size / BASIC.length) * 100)} label={`${learned.size}/${BASIC.length}글자`} />
+          <Ring dark value={Math.round((learned.size / LETTERS.length) * 100)} label={`${learned.size}/${LETTERS.length}글자`} />
           <div className="grid grid-cols-2 gap-3 w-full text-center">
             <div className="rounded-2xl bg-white/10 py-3"><p className="text-2xl font-bold num">{streak}</p><p className="text-xs text-white/60">연속 정답</p></div>
             <div className="rounded-2xl bg-white/10 py-3"><p className="text-2xl font-bold num">{target ? attempt : '–'}</p><p className="text-xs text-white/60">이번 글자 시도</p></div>

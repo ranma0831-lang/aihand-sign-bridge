@@ -8,14 +8,17 @@ export const VOWELS = new Set(JUNG);
 export const CONSONANTS = [...'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ'];
 export const BASIC = [...CONSONANTS, ...'ㅏㅑㅓㅕㅗㅛㅜㅠㅡㅣ', 'ㅐ', 'ㅔ', 'ㅚ', 'ㅟ', 'ㅢ'];
 export const JAMO_ALL = [...CONSONANTS, ...'ㄲㄸㅃㅆㅉ', ...JUNG];
+export const NUMBERS = [...'0123456789'];
+export const SIGN_KEYS = [...JAMO_ALL, ...NUMBERS];
 
-// 요구사항 8번 제약의 기본값. 설정 화면에서 바꿀 수 있다.
-export const SCREEN_ONLY = new Set(['ㅁ','ㅍ','ㄲ','ㄸ','ㅃ','ㅆ','ㅉ','ㅐ','ㅒ','ㅔ','ㅖ','ㅘ','ㅙ','ㅚ','ㅝ','ㅞ','ㅟ','ㅢ']);
+// AI Hand 한 대로 어려운 글자(두 손·움직임). 기본값은 signs.js의 null 항목과 같고, 설정 화면에서 바꿀 수 있다.
+export const SCREEN_ONLY = new Set(['ㅁ','ㅍ','ㄲ','ㄸ','ㅃ','ㅆ','ㅉ','ㅘ','ㅙ','ㅝ','ㅞ','0']);
 
-// 단어 → { seq: [{jamo, syllable}], skipped: [한글 음절이 아닌 글자] }
+// 단어 → { seq: [{jamo, syllable}], skipped: [한글 음절·숫자가 아닌 글자] }. 숫자는 한 자리씩 지숫자로
 export function toJamo(word) {
   const seq = [], skipped = [];
   for (const ch of word.replace(/\s+/g, '')) {
+    if (/[0-9]/.test(ch)) { seq.push({ jamo: ch, syllable: ch }); continue; }
     const code = ch.charCodeAt(0) - 0xAC00;
     if (code < 0 || code > 11171) { skipped.push(ch); continue; }
     const parts = [CHO[Math.floor(code / 588)], JUNG[Math.floor((code % 588) / 28)], ...JONG[code % 28]];

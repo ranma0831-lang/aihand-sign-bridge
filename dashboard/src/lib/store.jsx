@@ -1,7 +1,9 @@
 // 시스템 전체 상태: 손 5대, 지금 작업, 기록, 설정, 알림. 화면들은 useSystem()으로 읽는다.
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createBus, HAND_COUNT } from './bus.js';
-import { JAMO_ALL, SCREEN_ONLY, VOWELS, toJamo } from './hangul.js';
+import { SIGN_KEYS, SCREEN_ONLY, VOWELS, toJamo } from './hangul.js';
+import { SIGNS, defaultHand, toAngles } from './signs.js';
+import * as hw from './hw.js';
 
 const Ctx = createContext(null);
 export const useSystem = () => useContext(Ctx);
@@ -9,14 +11,14 @@ export const useSystem = () => useContext(Ctx);
 export const STATE_LABEL = { idle: '대기', run: '실행', done: '완료', error: '오류' };
 export const DIRS = ['세움', '왼쪽', '오른쪽', '뒤집기'];
 
-// shortcut: 손가락 각도는 임시값(전부 90°). 역할 2 각도표(3.1)가 나오면 설정 화면에서 고치거나 JSON으로 넣는다
+// 각도·담당 손 기본값은 signs.js(교재 사진을 보고 읽은 손 모양표)에서 만든다. 실제 손으로 확인하며 설정 화면에서 고친다
 export const defaultSettings = () => ({
   hands: [
-    { id: 1, dir: '세움', role: '자음' }, { id: 2, dir: '세움', role: '모음' },
-    { id: 3, dir: '왼쪽', role: '보조' }, { id: 4, dir: '오른쪽', role: '보조' }, { id: 5, dir: '뒤집기', role: '보조' },
+    { id: 1, dir: '세움', role: '자음·숫자' }, { id: 2, dir: '세움', role: '모음' },
+    { id: 3, dir: '왼쪽', role: '옆 방향 글자' }, { id: 4, dir: '오른쪽', role: '옆 방향 숫자' }, { id: 5, dir: '뒤집기', role: '아래 방향 글자' },
   ],
-  assign: Object.fromEntries(JAMO_ALL.map((j) => [j, SCREEN_ONLY.has(j) ? null : VOWELS.has(j) ? 2 : 1])),
-  angles: Object.fromEntries(JAMO_ALL.map((j) => [j, [90, 90, 90, 90, 90]])),
+  assign: Object.fromEntries(SIGN_KEYS.map((k) => [k, defaultHand(k, SIGNS[k], VOWELS.has(k))])),
+  angles: Object.fromEntries([...SIGN_KEYS, '칭찬', '쉼'].map((k) => [k, toAngles(SIGNS[k])])),
   screenOnly: [...SCREEN_ONLY],
   stepMs: 1200,
   gapMs: 250,
@@ -33,7 +35,7 @@ const idleHands = (hs) => hs.map((h) => ({ ...h, state: h.state === 'error' ? 'e
 export function SystemProvider({ children }) {
   const [bus] = useState(() => createBus(new URLSearchParams(location.search).get('ws')));
 
-  const [settings, setSettings] = useState(() => ({ ...defaultSettings(), ...load('sb-settings', {}) }));
+  const [settings, setSettings] = useState(() => ({ ...defaultSettings(), ...load('sb-settings-v2', {}) }));
   const [log, setLog] = useState(() => load('sb-log', []));
   const [hands, setHands] = useState(() =>
     Array.from({ length: HAND_COUNT }, (_, i) => ({ id: i + 1, connected: false, state: 'idle', jamo: '' })));
@@ -46,7 +48,11 @@ export function SystemProvider({ children }) {
   useEffect(() => { jobRef.current = job; }, [job]);
 
   useEffect(() => save('sb-log', log), [log]);
-  useEffect(() => save('sb-settings', settings), [settings]);
+  useEffect(() => save('sb-settings-v2', settings), [settings]); // v2: 손 모양표 기본값 (예전 90° 임시값 무시)
+  const settingsRef = useRef(settings);
+  useEffect(() => { settingsRef.current = settings; }, [settings]);
+  const [usb, setUsb] = useState([]); // 블루투스로 직접 연결된 손 번호
+  const [usbReply, setUsbReply] = useState({}); // 손별 micro:bit 마지막 응답
 
   const toast = useCallback((text, tone = 'info') => {
     const id = Math.random();
@@ -65,6 +71,11 @@ export function SystemProvider({ children }) {
         break;
       case 'step':
         if (m.hand) setHand(m.hand, { state: m.state === 'start' ? 'run' : 'done', jamo: m.jamo });
+        if (m.hand && m.state === 'start') {
+          const st = settingsRef.current;
+          const angles = st.angles[m.jamo];
+          if (angles) hw.sendAngles(m.hand, angles, Math.min(600, st.stepMs * 0.5)).catch(() => toast(`손 ${m.hand} 블루투스 전송 실패`, 'error'));
+        }
         if (m.i >= 0 && m.state === 'start') setJob((j) => ({ ...j, i: m.i, status: 'running' }));
         break;
       case 'paused': setJob((j) => ({ ...j, status: 'paused' })); break;
@@ -73,6 +84,7 @@ export function SystemProvider({ children }) {
         const j = jobRef.current;
         setJob({ ...j, i: j.plan.length, status: 'done', ms: m.ms });
         setTimeout(() => setHands(idleHands), 800);
+        setTimeout(() => j.plan.forEach((p) => p.hand && hw.sendAngles(p.hand, settingsRef.current.angles['쉼'], 500).catch(() => {})), 800);
         if (j.kind === 'express') addLog({ kind: '표현', text: j.word, ms: m.ms, ok: true, voice: j.voice, edited: j.edited });
         break;
       }
@@ -140,6 +152,22 @@ export function SystemProvider({ children }) {
       toast(on ? '시스템을 시작했습니다' : '시스템을 정지했습니다', on ? 'ok' : 'info');
     },
     clearError: (hand) => setHand(hand, { state: 'idle' }),
+    // 실제 AI Hand 블루투스 연결 (크롬·엣지)
+    async connectUsb(hand) {
+      try {
+        await hw.connectHand(hand, {
+          onLost: (h) => { setUsb((u) => u.filter((x) => x !== h)); toast(`손 ${h} 블루투스 연결이 끊겼습니다`, 'error'); },
+          // micro:bit 응답: OK면 받은 것, ERR이면 형식 오류
+          onLine: (h, line) => { setUsbReply((r) => ({ ...r, [h]: { line, t: Date.now() } })); if (line.startsWith('ERR')) toast(`손 ${h} 명령 형식 오류: ${line}`, 'error'); },
+        });
+        setUsb((u) => [...new Set([...u, hand])]);
+        toast(`손 ${hand}을(를) 블루투스로 연결했습니다`, 'ok');
+        hw.sendAngles(hand, settings.angles['쉼'], 500);
+      } catch (e) {
+        if (e?.name !== 'NotFoundError') toast(`손 ${hand} 연결 실패: micro:bit에 ✓가 떠 있는지, 다른 기기(휴대폰 앱 등)와 연결되어 있지 않은지 확인하세요 (${e?.message || e})`, 'error');
+      }
+    },
+    async disconnectUsb(hand) { await hw.disconnectHand(hand); setUsb((u) => u.filter((x) => x !== hand)); },
     updateSettings: (patch) => setSettings((s) => ({ ...s, ...(typeof patch === 'function' ? patch(s) : patch) })),
     resetSettings: () => setSettings(defaultSettings()),
     clearLog: () => setLog([]),
@@ -148,7 +176,7 @@ export function SystemProvider({ children }) {
   };
 
   return (
-    <Ctx.Provider value={{ bus, settings, log, hands, job, conn, system, toasts, subs, ...actions }}>
+    <Ctx.Provider value={{ bus, settings, log, hands, job, conn, system, toasts, subs, usb, usbReply, hwSupported: hw.hwSupported, ...actions }}>
       {children}
     </Ctx.Provider>
   );
