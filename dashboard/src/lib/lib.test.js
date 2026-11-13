@@ -74,3 +74,12 @@ test('학습 음성 피드백과 순위', async () => {
   const r = rankBoard([{ name: 'a', score: 3, ms: 9 }, { name: 'b', score: 4, ms: 20 }, { name: 'c', score: 4, ms: 10 }]);
   assert.deepEqual(r.map((x) => x.name), ['c', 'b', 'a']);
 });
+
+test('실제 카메라 고르기', async () => {
+  const { pickCamera, cameraError } = await import('./camera.js');
+  const cams = [{ deviceId: 'v', label: 'Mirametrix Virtual Camera' }, { deviceId: 'lg', label: 'LG Camera' }];
+  assert.equal(pickCamera(cams, '').deviceId, 'lg'); // 가상 카메라 건너뜀
+  assert.equal(pickCamera(cams, 'v').deviceId, 'v'); // 사용자가 고른 건 존중
+  assert.equal(pickCamera([{ deviceId: 'v', label: 'OBS Virtual Camera' }], '').deviceId, 'v'); // 가상밖에 없으면 그거라도
+  assert.match(cameraError({ name: 'NotReadableError' }), /Zoom/);
+});

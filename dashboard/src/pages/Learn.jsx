@@ -5,6 +5,7 @@ import { Card, CardTitle, Icon, Pill, Ring } from '../components/ui.jsx';
 import { BASIC, NUMBERS } from '../lib/hangul.js';
 import { useBusEvent, useSystem } from '../lib/store.jsx';
 import { useCamera } from '../lib/useCamera.js';
+import CameraBox from '../components/CameraBox.jsx';
 import { demoLine, followLine, resultLine, say } from '../lib/speech.js';
 
 export const LETTERS = [...BASIC, ...NUMBERS.slice(1)]; // 지문자 + 지숫자 1~9
@@ -19,7 +20,7 @@ export default function Learn() {
   const [hand, setHand] = useState(null);
   const [result, setResult] = useState(null);
   const [streak, setStreak] = useState(0);
-  const { video, start: startCam, stop: stopCam } = useCamera();
+  const cam = useCamera();
   const learned = new Set(log.filter((r) => r.kind === '학습' && r.ok).map((r) => r.text));
   const speak = (text) => settings.voice && say(text);
 
@@ -30,7 +31,7 @@ export default function Learn() {
     setHand(h);
     speak(demoLine(j, h));
   }
-  function follow() { setPhase('follow'); setResult(null); startCam(); recognize(target); speak(followLine()); }
+  function follow() { setPhase('follow'); setResult(null); cam.start(); recognize(target); speak(followLine()); }
   function retry() { setAttempt((a) => a + 1); follow(); }
 
   useBusEvent((m) => {
@@ -82,17 +83,11 @@ export default function Learn() {
           ))}
         </ol>
 
-        <Card className="lg:col-span-6 !p-3">
-          <div className="relative aspect-video rounded-[22px] overflow-hidden bg-black/5">
-            <video ref={video} autoPlay playsInline muted className="w-full h-full object-cover -scale-x-100" />
-            {phase !== 'follow' && phase !== 'result' && (
-              <p className="absolute inset-0 grid place-items-center text-mute text-sm p-4 text-center">
-                {settings.camera ? '시범이 끝나면 카메라가 켜집니다' : '설정에서 카메라가 꺼져 있습니다'}
-              </p>
-            )}
+        <div className="lg:col-span-6 min-w-0">
+          <CameraBox cam={cam}>
             {phase === 'follow' && <Pill tone="run" className="absolute top-3 left-3">손 모양 인식 중</Pill>}
-          </div>
-        </Card>
+          </CameraBox>
+        </div>
 
         <Card className="lg:col-span-6 grid place-items-center text-center min-h-64">
           {phase === 'pick' && <p className="text-mute">왼쪽 위에서 배울 글자를 고르세요.</p>}
@@ -114,7 +109,7 @@ export default function Learn() {
               {!result.ok && <p className="text-sm">AI Hand가 정답 동작을 다시 보여 줍니다</p>}
               <div className="flex gap-2 mt-2">
                 {!result.ok && <button onClick={retry} className="btn btn-dark"><Icon name="restart-bold" />다시 따라 하기</button>}
-                <button onClick={() => { setPhase('pick'); setTarget(null); stopCam(); }} className="btn btn-light">다른 글자</button>
+                <button onClick={() => { setPhase('pick'); setTarget(null); }} className="btn btn-light">다른 글자</button>
               </div>
             </div>
           )}

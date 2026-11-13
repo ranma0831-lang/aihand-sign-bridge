@@ -4,6 +4,7 @@ import { PageHead } from '../components/Shell.jsx';
 import { Card, CardTitle, Icon, Pill } from '../components/ui.jsx';
 import { useBusEvent, useSystem } from '../lib/store.jsx';
 import { useCamera } from '../lib/useCamera.js';
+import CameraBox from '../components/CameraBox.jsx';
 import { demoLine, followLine, jamoName, roParticle, say } from '../lib/speech.js';
 import { rankBoard } from '../lib/stats.js';
 import { LETTERS } from './Learn.jsx';
@@ -14,7 +15,7 @@ const fmtSec = (ms) => `${(ms / 1000).toFixed(1)}초`;
 
 export default function Challenge() {
   const { settings, board, demo, recognize, praise, stop, addLog, addScore, clearBoard, toast } = useSystem();
-  const { video, start: startCam, stop: stopCam } = useCamera();
+  const cam = useCamera();
   const [name, setName] = useState('');
   const [run, setRunState] = useState(null); // {name, letters, i, phase:'demo'|'follow'|'result'|'end', results, t0, hand, ms}
   const runRef = useRef(null); // 타이머·메시지 처리에서 최신 상태를 읽으려고 같이 둔다
@@ -35,7 +36,7 @@ export default function Challenge() {
     if (!who) { toast('이름을 입력해 주세요.', 'error'); return; }
     // 로봇이 직접 시범을 보일 수 있는 글자 중에서 고른다
     const pool = LETTERS.filter((j) => !settings.screenOnly.includes(j));
-    startCam();
+    cam.start(); // 미리보기에서 이미 켜져 있으면 그대로 둔다
     show({ name: who, letters: shuffle(pool).slice(0, COUNT), results: [], t0: Date.now() }, 0);
   }
 
@@ -47,11 +48,10 @@ export default function Challenge() {
     const ms = Date.now() - r.t0;
     addScore({ name: r.name, score, total: COUNT, ms });
     setRun({ ...r, phase: 'end', ms });
-    stopCam();
     speak(`${r.name}님, ${COUNT}개 중에 ${score}개 맞혔어요!${score === COUNT ? ' 만점이에요!' : ''}`);
   }
 
-  function quit() { stop(); stopCam(); setRun(null); }
+  function quit() { stop(); setRun(null); }
 
   useBusEvent((m) => {
     const r = runRef.current;
@@ -135,17 +135,9 @@ export default function Challenge() {
             </Card>
           )}
 
-          <Card className="!p-3">
-            <div className="relative aspect-video rounded-[22px] overflow-hidden bg-black/5">
-              <video ref={video} autoPlay playsInline muted className="w-full h-full object-cover -scale-x-100" />
-              {(!run || run.phase === 'end') && (
-                <p className="absolute inset-0 grid place-items-center text-mute text-sm p-4 text-center">
-                  {settings.camera ? '도전을 시작하면 카메라가 켜집니다' : '설정에서 카메라가 꺼져 있습니다'}
-                </p>
-              )}
-              {run?.phase === 'follow' && <Pill tone="run" className="absolute top-3 left-3">손 모양 인식 중</Pill>}
-            </div>
-          </Card>
+          <CameraBox cam={cam}>
+            {run?.phase === 'follow' && <Pill tone="run" className="absolute top-3 left-3">손 모양 인식 중</Pill>}
+          </CameraBox>
         </div>
 
         <Card dark className="lg:col-span-5 self-start">
