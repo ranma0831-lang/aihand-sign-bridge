@@ -3,6 +3,7 @@ import Shell from './components/Shell.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Express from './pages/Express.jsx';
 import Learn from './pages/Learn.jsx';
+import Challenge from './pages/Challenge.jsx';
 import Robots from './pages/Robots.jsx';
 import Analytics from './pages/Analytics.jsx';
 import Settings from './pages/Settings.jsx';
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/express" element={<Express />} />
         <Route path="/learn" element={<Learn />} />
+        <Route path="/challenge" element={<Challenge />} />
         <Route path="/robots" element={<Robots />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/settings" element={<Settings />} />

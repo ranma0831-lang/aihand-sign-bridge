@@ -51,3 +51,26 @@ test('손 모양표 → 서보 각도', () => {
     assert.equal(SIGNS[k] === null, SCREEN_ONLY.has(k), k + ' 화면 대체 목록 불일치');
   }
 });
+
+test('음성 안내 문장', async () => {
+  const { startMessage, objParticle } = await import('./speech.js');
+  assert.equal(objParticle('사랑'), '을');
+  assert.equal(objParticle('나라'), '를');
+  assert.equal(startMessage('사랑', [{ jamo: 'ㅅ', hand: 1 }], []), '사랑을 지문자로 보여 드릴게요.');
+  assert.equal(startMessage('까치', [{ jamo: 'ㄲ', hand: null }, { jamo: 'ㅏ', hand: 2 }], []),
+    '까치를 지문자로 보여 드릴게요. 쌍기역을 손으로 표현할 수 없어서 화면 그림으로 보여 드릴게요.');
+  assert.match(startMessage('a', [], ['a']), /다시 말씀해/);
+  assert.match(startMessage('가a', [{ jamo: 'ㄱ', hand: 1 }], ['a']), /건너뛸게요/);
+});
+
+test('학습 음성 피드백과 순위', async () => {
+  const { resultLine, demoLine } = await import('./speech.js');
+  const { rankBoard } = await import('./stats.js');
+  assert.equal(resultLine(true, 'ㄱ', 'ㄱ'), '정답이에요. 잘했어요!');
+  assert.equal(resultLine(false, 'ㄱ', 'ㄴ'), '니은으로 보였어요. 기역을 다시 보여 드릴게요.');
+  assert.equal(resultLine(false, 'ㅏ', 'ㅓ'), '어로 보였어요. 아를 다시 보여 드릴게요.');
+  assert.equal(resultLine(false, 'ㄱ', 'ㄹ'), '리을로 보였어요. 기역을 다시 보여 드릴게요.');
+  assert.match(demoLine('ㅁ', null), /화면 그림/);
+  const r = rankBoard([{ name: 'a', score: 3, ms: 9 }, { name: 'b', score: 4, ms: 20 }, { name: 'c', score: 4, ms: 10 }]);
+  assert.deepEqual(r.map((x) => x.name), ['c', 'b', 'a']);
+});

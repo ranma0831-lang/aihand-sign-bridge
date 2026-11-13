@@ -37,6 +37,7 @@ export function SystemProvider({ children }) {
 
   const [settings, setSettings] = useState(() => ({ ...defaultSettings(), ...load('sb-settings-v2', {}) }));
   const [log, setLog] = useState(() => load('sb-log', []));
+  const [board, setBoard] = useState(() => load('sb-board', [])); // 도전 모드 순위표
   const [hands, setHands] = useState(() =>
     Array.from({ length: HAND_COUNT }, (_, i) => ({ id: i + 1, connected: false, state: 'idle', jamo: '' })));
   const [job, setJob] = useState({ kind: '', word: '', plan: [], i: -1, status: 'idle' });
@@ -48,6 +49,7 @@ export function SystemProvider({ children }) {
   useEffect(() => { jobRef.current = job; }, [job]);
 
   useEffect(() => save('sb-log', log), [log]);
+  useEffect(() => save('sb-board', board), [board]);
   useEffect(() => save('sb-settings-v2', settings), [settings]); // v2: 손 모양표 기본값 (예전 90° 임시값 무시)
   const settingsRef = useRef(settings);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
@@ -171,12 +173,14 @@ export function SystemProvider({ children }) {
     updateSettings: (patch) => setSettings((s) => ({ ...s, ...(typeof patch === 'function' ? patch(s) : patch) })),
     resetSettings: () => setSettings(defaultSettings()),
     clearLog: () => setLog([]),
+    addScore: (entry) => setBoard((b) => [{ t: Date.now(), ...entry }, ...b].slice(0, 100)),
+    clearBoard: () => setBoard([]),
     addLog,
     toast,
   };
 
   return (
-    <Ctx.Provider value={{ bus, settings, log, hands, job, conn, system, toasts, subs, usb, usbReply, hwSupported: hw.hwSupported, ...actions }}>
+    <Ctx.Provider value={{ bus, settings, log, hands, job, conn, system, toasts, subs, usb, usbReply, board, hwSupported: hw.hwSupported, ...actions }}>
       {children}
     </Ctx.Provider>
   );

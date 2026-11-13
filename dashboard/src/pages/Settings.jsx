@@ -73,7 +73,7 @@ export default function Settings() {
             <span className="flex justify-between"><span>자모 사이 대기 시간</span><b className="num">{s.gapMs}ms</b></span>
             <input type="range" min="0" max="1500" step="50" value={s.gapMs} onChange={(e) => updateSettings({ gapMs: +e.target.value })} className="accent-ink" />
           </label>
-          {[['camera', '학습 모드 카메라 사용'], ['voice', '음성 입력 사용']].map(([k, label]) => (
+          {[['camera', '학습 모드 카메라 사용'], ['voice', '음성 입력·음성 안내 사용']].map(([k, label]) => (
             <label key={k} className="flex items-center justify-between text-sm">
               {label}
               <input type="checkbox" checked={s[k]} onChange={(e) => updateSettings({ [k]: e.target.checked })} className="w-5 h-5 accent-ink" />

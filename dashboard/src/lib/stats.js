@@ -51,3 +51,6 @@ export function byLetter(log, order) {
     .map((e) => ({ ...e, rate: pct(e.ok, e.total) }))
     .sort((a, b) => order.indexOf(a.jamo) - order.indexOf(b.jamo));
 }
+
+// 도전 모드 순위: 맞힌 개수 많은 순, 같으면 걸린 시간 짧은 순
+export const rankBoard = (board) => [...board].sort((a, b) => b.score - a.score || a.ms - b.ms);

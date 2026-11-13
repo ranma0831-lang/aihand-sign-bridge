@@ -7,6 +7,7 @@ export const NAV = [
   { to: '/', label: '통합 관제', icon: 'widget-5-linear' },
   { to: '/express', label: '지문자 표현', icon: 'text-square-linear' },
   { to: '/learn', label: '학습', icon: 'book-bookmark-linear' },
+  { to: '/challenge', label: '도전', icon: 'cup-star-linear' },
   { to: '/robots', label: '개별 제어', icon: 'tuning-2-linear' },
   { to: '/analytics', label: '통계', icon: 'chart-2-linear' },
   { to: '/settings', label: '설정', icon: 'settings-linear' },
@@ -75,7 +76,7 @@ export default function Shell({ children }) {
         </div>
       </div>
 
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 glass !rounded-none !rounded-t-3xl grid grid-cols-7 px-1 pt-2 pb-[max(.5rem,env(safe-area-inset-bottom))]">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 glass !rounded-none !rounded-t-3xl grid grid-cols-8 px-1 pt-2 pb-[max(.5rem,env(safe-area-inset-bottom))]">
         {NAV.map((n) => (
           <NavLink key={n.to} to={n.to} end
             className={({ isActive }) => `flex flex-col items-center gap-0.5 py-1.5 rounded-2xl text-[10px] ${isActive ? 'bg-ink text-white font-semibold' : 'text-mute'}`}>

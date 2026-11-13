@@ -4,7 +4,7 @@ import { PageHead } from '../components/Shell.jsx';
 import { Card, CardTitle, Icon, Pill, Ring, Spark, Stat } from '../components/ui.jsx';
 import { HandCard } from '../components/hands.jsx';
 import { useSystem } from '../lib/store.jsx';
-import { byDay, summary } from '../lib/stats.js';
+import { byDay, rankBoard, summary } from '../lib/stats.js';
 
 const KIND = { express: '지문자 표현', demo: '학습 시범', quiz: '맞히기' };
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -18,7 +18,8 @@ export function jobView(job) {
 }
 
 export default function Dashboard() {
-  const { job, hands, settings, log, system, systemOn, pause, resume, stop } = useSystem();
+  const { job, hands, settings, log, board, system, systemOn, pause, resume, stop } = useSystem();
+  const top = rankBoard(board).slice(0, 3);
   const { len, cur, next, progress } = jobView(job);
   const s = summary(log);
   const week = byDay(log, 7);
@@ -93,11 +94,27 @@ export default function Dashboard() {
           </div>
         </section>
 
-        <Card className="lg:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-5">
+        <Card className="lg:col-span-8 grid grid-cols-2 md:grid-cols-4 gap-5 content-center">
           <Stat label="표현한 단어" value={s.expressCount} unit="개" />
           <Stat label="평균 표현 시간" value={s.expressAvgMs == null ? null : (s.expressAvgMs / 1000).toFixed(1)} unit="초" />
           <Stat label="평균 피드백 시간" value={s.feedbackMs} unit="ms" hint="목표 1,000ms 이내" />
           <Stat label="오류" value={s.errors} unit="건" />
+        </Card>
+
+        <Card dark className="lg:col-span-4">
+          <CardTitle icon="cup-star-linear" right={<Link to="/challenge" className="text-xs text-white/60 hover:text-white">도전하기 →</Link>}>도전 순위</CardTitle>
+          {top.length ? (
+            <ol className="flex flex-col gap-1.5">
+              {top.map((b, k) => (
+                <li key={b.t} className="flex items-center gap-3 text-sm">
+                  <span className="w-5 font-bold num">{k + 1}</span>
+                  <span className="mr-auto truncate font-semibold">{b.name}</span>
+                  <span className="font-bold num">{b.score}/{b.total}</span>
+                  <span className="text-white/60 num w-12 text-right">{(b.ms / 1000).toFixed(1)}초</span>
+                </li>
+              ))}
+            </ol>
+          ) : <p className="text-white/60 text-sm">아직 도전 기록이 없어요.</p>}
         </Card>
 
         <section className="lg:col-span-12">

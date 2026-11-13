@@ -1,10 +1,11 @@
 // ② 지문자 표현: 텍스트·음성 입력 → 자모 분해 → 손 배정 → 순서대로 표현 (F-01, F-02, F-09)
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PageHead } from '../components/Shell.jsx';
 import { Card, CardTitle, Icon, Pill } from '../components/ui.jsx';
 import { JamoChips } from '../components/hands.jsx';
 import { useSystem } from '../lib/store.jsx';
 import { jobView } from './Dashboard.jsx';
+import { say, startMessage } from '../lib/speech.js';
 
 const SR = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
 
@@ -12,27 +13,44 @@ export default function Express() {
   const { job, makePlan, express, pause, resume, stop, settings, toast } = useSystem();
   const [word, setWord] = useState('');
   const [listening, setListening] = useState(false);
-  const voiceText = useRef(null);
   const active = (job.status === 'running' || job.status === 'paused') && job.kind === 'express';
   const shown = active || (job.kind === 'express' && job.status !== 'idle');
   const preview = useMemo(() => makePlan(word), [word, makePlan]);
   const { cur } = jobView(job);
   const next = active ? job.plan[job.i + 1] : null; // 다음 글자 미리보기 (손이 없는 글자도 포함)
 
+  // 단어 표현 시작. 음성 안내가 켜져 있으면 무엇을 보여 줄지, 손으로 못 하는 글자는 어떻게 할지 말해 준다
+  function run(w, voice) {
+    const { plan, skipped } = makePlan(w);
+    if (!plan.length) {
+      toast(voice ? '알아들은 한글이 없어요. 다시 말씀해 주세요.' : '한글 단어를 입력해 주세요.', 'error');
+      if (voice && settings.voice) say(startMessage(w, plan, skipped));
+      return;
+    }
+    if (express(w, { voice }) && settings.voice) say(startMessage(w, plan, skipped));
+  }
+
   function start(e) {
     e.preventDefault();
-    if (!preview.plan.length) { toast('한글 단어를 입력해 주세요.', 'error'); return; }
-    const voice = voiceText.current != null;
-    express(word.trim(), { voice, edited: voice && voiceText.current !== word.trim() });
-    voiceText.current = null;
+    run(word.trim(), false);
   }
+
+  // 표현이 끝나면 음성으로 알려 준다
+  useEffect(() => {
+    if (job.kind === 'express' && job.status === 'done' && settings.voice) say('다 보여 드렸어요.');
+  }, [job.kind, job.status, settings.voice]);
 
   function listen() {
     if (!SR) { toast('이 브라우저는 음성 입력을 지원하지 않습니다. 크롬에서 열어 주세요.', 'error'); return; }
     const rec = new SR();
     rec.lang = 'ko-KR';
-    rec.onresult = (e) => { const t = e.results[0][0].transcript.replace(/[.?!\s]/g, ''); voiceText.current = t; setWord(t); };
-    rec.onerror = (e) => toast(e.error === 'not-allowed' ? '마이크 권한을 허용해 주세요.' : '음성을 인식하지 못했습니다. 다시 말해 주세요.', 'error');
+    // 말이 끝나면 버튼을 누르지 않아도 바로 표현을 시작한다
+    rec.onresult = (e) => { const t = e.results[0][0].transcript.replace(/[.?!\s]/g, ''); setWord(t); run(t, true); };
+    rec.onerror = (e) => {
+      const msg = e.error === 'not-allowed' ? '마이크 권한을 허용해 주세요.' : '잘 못 알아들었어요. 다시 말씀해 주세요.';
+      toast(msg, 'error');
+      if (settings.voice) say(msg);
+    };
     rec.onend = () => setListening(false);
     setListening(true);
     rec.start();
@@ -51,7 +69,7 @@ export default function Express() {
               placeholder="예: 사랑" className="field flex-1 min-w-[12rem] text-lg" disabled={active} />
             {settings.voice && (
               <button type="button" onClick={listen} disabled={active || listening} className="btn btn-light">
-                <Icon name="microphone-3-linear" className="text-lg" />{listening ? '듣는 중…' : '음성 입력'}
+                <Icon name="microphone-3-linear" className="text-lg" />{listening ? '듣는 중… 단어를 말하세요' : '말해서 바로 표현'}
               </button>
             )}
             {!active ? (

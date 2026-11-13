@@ -1,42 +1,36 @@
 // ③ 학습: 글자 선택 → AI Hand 시범 → 웹캠으로 따라 하기 → 정답/오답 (F-05, F-06, F-07)
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { PageHead } from '../components/Shell.jsx';
 import { Card, CardTitle, Icon, Pill, Ring } from '../components/ui.jsx';
 import { BASIC, NUMBERS } from '../lib/hangul.js';
-
-const LETTERS = [...BASIC, ...NUMBERS.slice(1)]; // 지문자 + 지숫자 1~9
 import { useBusEvent, useSystem } from '../lib/store.jsx';
+import { useCamera } from '../lib/useCamera.js';
+import { demoLine, followLine, resultLine, say } from '../lib/speech.js';
+
+export const LETTERS = [...BASIC, ...NUMBERS.slice(1)]; // 지문자 + 지숫자 1~9
 
 const STEPS = [['demo', '시범 보기'], ['follow', '따라 하기'], ['result', '결과']];
 
 export default function Learn() {
-  const { settings, log, demo, recognize, praise, addLog, toast } = useSystem();
+  const { settings, log, demo, recognize, praise, addLog } = useSystem();
   const [target, setTarget] = useState(null);
   const [phase, setPhase] = useState('pick'); // pick → demo → follow → result
   const [attempt, setAttempt] = useState(1);
   const [hand, setHand] = useState(null);
   const [result, setResult] = useState(null);
   const [streak, setStreak] = useState(0);
-  const video = useRef(null);
-  const stream = useRef(null);
+  const { video, start: startCam, stop: stopCam } = useCamera();
   const learned = new Set(log.filter((r) => r.kind === '학습' && r.ok).map((r) => r.text));
-
-  async function startCam() {
-    if (!settings.camera || stream.current) return;
-    try {
-      stream.current = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (video.current) video.current.srcObject = stream.current;
-    } catch { toast('카메라를 켤 수 없습니다. 브라우저 권한을 확인해 주세요.', 'error'); }
-  }
-  const stopCam = () => { stream.current?.getTracks().forEach((t) => t.stop()); stream.current = null; };
-  useEffect(() => stopCam, []);
+  const speak = (text) => settings.voice && say(text);
 
   function pick(j) {
     if (phase === 'demo' || phase === 'follow') return;
     setTarget(j); setAttempt(1); setResult(null); setPhase('demo');
-    setHand(demo(j));
+    const h = demo(j);
+    setHand(h);
+    speak(demoLine(j, h));
   }
-  function follow() { setPhase('follow'); setResult(null); startCam(); recognize(target); }
+  function follow() { setPhase('follow'); setResult(null); startCam(); recognize(target); speak(followLine()); }
   function retry() { setAttempt((a) => a + 1); follow(); }
 
   useBusEvent((m) => {
@@ -46,6 +40,7 @@ export default function Learn() {
       setResult({ ...m, ok }); setPhase('result');
       setStreak((s) => (ok ? s + 1 : 0));
       addLog({ kind: '학습', text: target, ms: m.ms, ok, attempt, prob: m.prob });
+      speak(resultLine(ok, target, m.jamo));
       if (ok && hand) praise(hand); // 정답이면 칭찬 동작
       if (!ok) demo(target); // 오답이면 정답 동작을 다시 보여 준다
     }
