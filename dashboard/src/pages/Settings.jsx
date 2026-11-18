@@ -1,25 +1,22 @@
-// ⑥ 설정: 손 방향·역할, 자모별 담당 손과 손가락 각도, 표현 불가 글자, 속도, 카메라·음성
+// ⑥ 설정: 손 배치(방향·앞면), 각도표(이정민 님 양식 그대로), 속도, 카메라·음성
+// 각도표 원본은 xlsx → `npm run angles -- 각도표.xlsx`로 반영. 여기서 고친 값은 이 브라우저에만 남는다 (현장 확인용)
 import { PageHead } from '../components/Shell.jsx';
-import { Card, CardTitle, Icon } from '../components/ui.jsx';
-import { SIGN_KEYS } from '../lib/hangul.js';
-import { SIGNS } from '../lib/signs.js';
-import { DIRS, useSystem } from '../lib/store.jsx';
+import { Card, CardTitle, Icon, Pill } from '../components/ui.jsx';
+import { DIRS, FACES, KEYS, TABLE_INFO } from '../lib/angleTable.js';
+import { useSystem } from '../lib/store.jsx';
 
-const FINGERS = ['엄지', '검지', '중지', '약지', '소지', '손목'];
-const KEYS = [...SIGN_KEYS, '칭찬', '쉼'];
+const SERVOS = ['서보1 엄지', '서보2 검지', '서보3 중지', '서보4 약지', '서보5 새끼', '서보6 손목'];
+const handsLabel = (hs) => (!hs.length ? 'screen' : hs.join(','));
 
 export default function Settings() {
   const { settings: s, updateSettings, resetSettings, toast } = useSystem();
+  const confirmed = KEYS.filter((k) => s.table[k]?.status === '확인됨').length;
 
   const setHandCfg = (id, patch) => updateSettings((p) => ({ hands: p.hands.map((h) => (h.id === id ? { ...h, ...patch } : h)) }));
-  // 담당 손 선택: '화면'이면 표현 불가 글자 목록에 넣는다
-  const setAssign = (j, v) => updateSettings((p) => ({
-    assign: { ...p.assign, [j]: v === 'screen' ? null : Number(v) },
-    screenOnly: v === 'screen' ? [...new Set([...p.screenOnly, j])] : p.screenOnly.filter((x) => x !== j),
-  }));
-  const setAngle = (j, k, v) => updateSettings((p) => ({
-    angles: { ...p.angles, [j]: (p.angles[j] ?? [90, 90, 90, 90, 90, 90]).map((a, i) => (i === k ? Math.max(0, Math.min(180, Number(v) || 0)) : a)) },
-  }));
+  const setRow = (k, patch) => updateSettings((p) => ({ table: { ...p.table, [k]: { ...p.table[k], ...patch } } }));
+  const setAngle = (k, i, v) => setRow(k, { angles: s.table[k].angles.map((a, j) => (j === i ? Math.max(0, Math.min(180, Number(v) || 0)) : a)) });
+  // 맡는 손 선택지: 각도표에 나온 조합(예: "1,2") + 손 1~5 + 화면 안내
+  const handOptions = [...new Set([...KEYS.map((k) => handsLabel(s.table[k]?.hands || [])).filter((v) => v.includes(',')), '1', '2', '3', '4', '5'])];
 
   function exportJson() {
     const url = URL.createObjectURL(new Blob([JSON.stringify(s, null, 2)], { type: 'application/json' }));
@@ -31,7 +28,7 @@ export default function Settings() {
     if (!file) return;
     try {
       const data = JSON.parse(await file.text());
-      if (!data.assign || !data.angles) throw new Error();
+      if (!data.table || !data.hands) throw new Error();
       updateSettings(data);
       toast('설정 파일을 불러왔습니다', 'ok');
     } catch { toast('설정 파일 형식이 맞지 않습니다', 'error'); }
@@ -40,7 +37,7 @@ export default function Settings() {
 
   return (
     <>
-      <PageHead title="설정" sub="자모별 담당 손과 손가락 각도를 관리합니다. 바꾼 내용은 바로 저장됩니다."
+      <PageHead title="설정" sub="손 배치와 각도표(이정민 님 양식)를 확인하고, 현장에서 각도를 잠깐 고쳐 볼 수 있습니다."
         right={
           <div className="flex flex-wrap gap-2">
             <label className="btn btn-light cursor-pointer"><Icon name="upload-linear" />불러오기<input type="file" accept="application/json" onChange={importJson} className="sr-only" /></label>
@@ -49,18 +46,22 @@ export default function Settings() {
         } />
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <Card className="lg:col-span-7">
-          <CardTitle icon="hand-stars-linear">AI Hand 방향과 역할</CardTitle>
+          <CardTitle icon="hand-stars-linear">손 배치 (받침대 방향 · 앞면)</CardTitle>
           <div className="grid gap-2">
             {s.hands.map((h) => (
               <div key={h.id} className="flex flex-wrap items-center gap-2">
                 <span className="w-12 font-semibold">손 {h.id}</span>
-                <select aria-label={`손 ${h.id} 방향`} value={h.dir} onChange={(e) => setHandCfg(h.id, { dir: e.target.value })} className="field !py-2 flex-1 min-w-24">
+                <select aria-label={`손 ${h.id} 방향`} value={h.dir} onChange={(e) => setHandCfg(h.id, { dir: e.target.value })} className="field !py-2 flex-1 min-w-20">
                   {DIRS.map((d) => <option key={d}>{d}</option>)}
                 </select>
-                <input aria-label={`손 ${h.id} 역할`} value={h.role} onChange={(e) => setHandCfg(h.id, { role: e.target.value })} className="field !py-2 flex-1 min-w-24" />
+                <select aria-label={`손 ${h.id} 앞면`} value={h.face} onChange={(e) => setHandCfg(h.id, { face: e.target.value })} className="field !py-2 flex-1 min-w-20">
+                  {FACES.map((d) => <option key={d}>{d}</option>)}
+                </select>
+                <span className="text-xs text-mute basis-full sm:basis-auto sm:flex-[2] min-w-0 truncate" title={h.role}>{h.role}</span>
               </div>
             ))}
           </div>
+          <p className="text-xs text-mute mt-3">손목은 반 바퀴만 돌아서, 손등이 보이는 글자는 손을 받침대에 뒤돌려 세웁니다 (11/16 확인).</p>
         </Card>
 
         <Card className="lg:col-span-5 flex flex-col gap-5">
@@ -79,40 +80,46 @@ export default function Settings() {
               <input type="checkbox" checked={s[k]} onChange={(e) => updateSettings({ [k]: e.target.checked })} className="w-5 h-5 accent-ink" />
             </label>
           ))}
-          <button onClick={resetSettings} className="btn btn-light text-sm mt-auto">기본값으로 되돌리기</button>
+          <button onClick={resetSettings} className="btn btn-light text-sm mt-auto">각도표 기본값으로 되돌리기</button>
         </Card>
 
         <Card className="lg:col-span-12 !p-0 overflow-hidden">
           <div className="px-6 pt-5">
-            <CardTitle icon="list-linear" right={<span className="text-xs text-mute">교재 사진 기준 추정값 · 실제 손으로 확인하며 고치세요</span>}>글자별 담당 손과 각도 (0~180°)</CardTitle>
+            <CardTitle icon="list-linear" right={<Pill tone={confirmed === KEYS.length ? 'ok' : 'idle'}>확인됨 {confirmed}/{KEYS.length}</Pill>}>
+              각도표 <span className="text-sm font-normal text-mute">· {TABLE_INFO.source || '기본값'} ({TABLE_INFO.generated})</span>
+            </CardTitle>
+            <p className="text-xs text-mute -mt-2 mb-3">서보 기준: 엄지 펴짐 90 / 굽힘 180, 나머지 손가락 펴짐 90 / 굽힘 0, 손목 90 고정. 쌍자음·ㅘ·ㅝ·ㅙ·ㅞ·11 이상은 움직임이 있어 항상 화면 안내.</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm num">
               <thead className="text-mute text-left"><tr>
-                <th className="px-6 py-2 font-medium">자모</th><th className="px-3 py-2 font-medium">담당</th><th className="px-3 py-2 font-medium whitespace-nowrap">사진 기준 모양</th>
-                {FINGERS.map((f) => <th key={f} className="px-2 py-2 font-medium">{f}</th>)}
+                <th className="px-6 py-2 font-medium">글자</th><th className="px-3 py-2 font-medium whitespace-nowrap">방향·앞면</th><th className="px-3 py-2 font-medium whitespace-nowrap">맡는 손</th>
+                {SERVOS.map((f) => <th key={f} className="px-2 py-2 font-medium whitespace-nowrap">{f}</th>)}
+                <th className="px-3 py-2 font-medium">상태</th><th className="px-3 py-2 font-medium">메모</th>
               </tr></thead>
               <tbody>
-                {KEYS.map((j) => {
-                  const screen = s.screenOnly.includes(j);
+                {KEYS.map((k) => {
+                  const r = s.table[k];
+                  if (!r) return null;
+                  const screen = !r.hands.length;
                   return (
-                    <tr key={j} className={`border-t border-black/5 ${screen ? 'opacity-60' : ''}`}>
-                      <td className="px-6 py-1.5 text-lg font-bold">{j}</td>
+                    <tr key={k} className={`border-t border-black/5 ${screen ? 'opacity-60' : ''}`}>
+                      <td className="px-6 py-1.5 text-lg font-bold">{k}</td>
+                      <td className="px-3 py-1.5 text-xs whitespace-nowrap">{r.dir}·{r.face}</td>
                       <td className="px-3 py-1.5">
-                        <select aria-label={`${j} 담당 손`} value={screen ? 'screen' : s.assign[j] ?? 1} onChange={(e) => setAssign(j, e.target.value)} className="field !py-1.5 !px-2 !rounded-xl">
-                          {s.hands.map((h) => <option key={h.id} value={h.id}>손 {h.id}</option>)}
-                          <option value="screen">화면(표현 불가)</option>
+                        <select aria-label={`${k} 맡는 손`} value={handsLabel(r.hands)} onChange={(e) => setRow(k, { hands: e.target.value === 'screen' ? [] : e.target.value.split(',').map(Number) })} className="field !py-1.5 !px-2 !rounded-xl">
+                          {handOptions.map((v) => <option key={v} value={v}>{v.includes(',') ? `손 ${v} 번갈아` : `손 ${v}`}</option>)}
+                          <option value="screen">화면 안내</option>
                         </select>
                       </td>
-                      <td className="px-3 py-1.5 text-xs text-mute min-w-40" title={SIGNS[j]?.note}>
-                        {SIGNS[j] ? `${SIGNS[j].dir}${SIGNS[j].back ? ' · 손등' : ''}${SIGNS[j].note ? ` · ${SIGNS[j].note}` : ''}` : '두 손·움직임'}
-                      </td>
-                      {FINGERS.map((f, k) => (
+                      {SERVOS.map((f, i) => (
                         <td key={f} className="px-2 py-1.5">
-                          <input type="number" min="0" max="180" aria-label={`${j} ${f} 각도`} value={s.angles[j]?.[k] ?? 90} disabled={screen}
-                            onChange={(e) => setAngle(j, k, e.target.value)} className="field !py-1.5 !px-2 !rounded-xl w-16" />
+                          <input type="number" min="0" max="180" aria-label={`${k} ${f} 각도`} value={r.angles[i]} disabled={screen}
+                            onChange={(e) => setAngle(k, i, e.target.value)} className="field !py-1.5 !px-2 !rounded-xl w-16" />
                         </td>
                       ))}
+                      <td className="px-3 py-1.5 text-xs whitespace-nowrap">{r.status === '확인됨' ? <Pill tone="ok">확인됨</Pill> : r.status || '초안'}{r.checker && ` · ${r.checker}`}</td>
+                      <td className="px-3 py-1.5 text-xs text-mute min-w-48">{r.note}</td>
                     </tr>
                   );
                 })}

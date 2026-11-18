@@ -1,7 +1,7 @@
 // ⑤ 통계·학습 기록: 목표 수치(N-01~N-04, S-09) 확인과 기록 (S-05)
 import { PageHead } from '../components/Shell.jsx';
 import { Bars, Card, CardTitle, Icon, Spark, Stat } from '../components/ui.jsx';
-import { BASIC } from '../lib/hangul.js';
+import { KEYS } from '../lib/angleTable.js';
 import { useSystem } from '../lib/store.jsx';
 import { byDay, byLetter, summary } from '../lib/stats.js';
 
@@ -11,7 +11,7 @@ export default function Analytics() {
   const { log, clearLog } = useSystem();
   const s = summary(log);
   const days = byDay(log, 14);
-  const letters = byLetter(log, BASIC);
+  const letters = byLetter(log, KEYS);
 
   return (
     <>

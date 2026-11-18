@@ -8,6 +8,7 @@ import CameraBox from '../components/CameraBox.jsx';
 import { demoLine, followLine, jamoName, roParticle, say } from '../lib/speech.js';
 import { rankBoard } from '../lib/stats.js';
 import { LETTERS } from './Learn.jsx';
+import { isScreen } from '../lib/angleTable.js';
 
 const COUNT = 5;
 const shuffle = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
@@ -35,7 +36,7 @@ export default function Challenge() {
     const who = name.trim();
     if (!who) { toast('이름을 입력해 주세요.', 'error'); return; }
     // 로봇이 직접 시범을 보일 수 있는 글자 중에서 고른다
-    const pool = LETTERS.filter((j) => !settings.screenOnly.includes(j));
+    const pool = LETTERS.filter((j) => !isScreen(settings.table, j));
     cam.start(); // 미리보기에서 이미 켜져 있으면 그대로 둔다
     show({ name: who, letters: shuffle(pool).slice(0, COUNT), results: [], t0: Date.now() }, 0);
   }

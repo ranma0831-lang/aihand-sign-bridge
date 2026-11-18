@@ -11,7 +11,7 @@ export function HandCard({ hand, cfg, active, next, children }) {
         </span>
         <div className="mr-auto min-w-0">
           <p className="font-semibold leading-tight">손 {hand.id}</p>
-          <p className={`text-xs ${dark ? 'text-white/60' : 'text-mute'}`}>{cfg?.dir} · {cfg?.role}</p>
+          <p className={`text-xs ${dark ? 'text-white/60' : 'text-mute'}`}>{cfg?.dir}{cfg?.face && ` · ${cfg.face}`}</p>
         </div>
         <StatePill state={hand.state} />
       </div>

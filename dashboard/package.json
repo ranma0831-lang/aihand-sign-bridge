@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node --test src/lib/lib.test.js"
+    "test": "node --test src/lib/lib.test.js",
+    "angles": "node scripts/import-angles.mjs"
   },
   "dependencies": {
     "@iconify/react": "^6.0.4",

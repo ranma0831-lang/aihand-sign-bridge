@@ -2,13 +2,13 @@
 import { useState } from 'react';
 import { PageHead } from '../components/Shell.jsx';
 import { Card, CardTitle, Icon, Pill, Ring } from '../components/ui.jsx';
-import { BASIC, NUMBERS } from '../lib/hangul.js';
+import { KEYS, isScreen } from '../lib/angleTable.js';
 import { useBusEvent, useSystem } from '../lib/store.jsx';
 import { useCamera } from '../lib/useCamera.js';
 import CameraBox from '../components/CameraBox.jsx';
 import { demoLine, followLine, resultLine, say } from '../lib/speech.js';
 
-export const LETTERS = [...BASIC, ...NUMBERS.slice(1)]; // 지문자 + 지숫자 1~9
+export const LETTERS = KEYS; // 각도표 글자 그대로: 자음 14, 모음 17, 숫자 1~10 (인식 모델과 같은 범위)
 
 const STEPS = [['demo', '시범 보기'], ['follow', '따라 하기'], ['result', '결과']];
 
@@ -60,7 +60,7 @@ export default function Learn() {
               <button key={j} onClick={() => pick(j)} aria-pressed={target === j}
                 className={`relative aspect-square rounded-2xl text-xl font-bold border transition
                   ${target === j ? 'bg-ink text-white border-ink' : 'bg-white/70 border-black/10 hover:border-ink'}
-                  ${settings.screenOnly.includes(j) ? 'border-dashed' : ''}`}>
+                  ${isScreen(settings.table, j) ? 'border-dashed' : ''}`}>
                 {j}
                 {learned.has(j) && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-ok" aria-label="맞힌 적 있음" />}
               </button>

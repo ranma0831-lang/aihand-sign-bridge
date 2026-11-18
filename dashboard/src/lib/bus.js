@@ -1,6 +1,6 @@
 // 중앙 PC(FastAPI)와 주고받는 통로. ?ws=ws://주소 가 있으면 진짜 서버, 없으면 가짜 데이터.
 // 메시지 형식은 dashboard/README.md 참고.
-import { BASIC } from './hangul.js';
+import { KEYS } from './angleTable.js';
 
 export const HAND_COUNT = 5;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -79,7 +79,7 @@ export function mockBus() {
         case 'recognize': { // 사용자가 손을 2초쯤 들고 있다고 치고 70% 확률로 정답
           await wait(1800 + Math.random() * 600);
           const ok = Math.random() < 0.7;
-          const jamo = ok ? m.jamo : BASIC.filter((j) => j !== m.jamo)[Math.floor(Math.random() * (BASIC.length - 1))];
+          const jamo = ok ? m.jamo : KEYS.filter((j) => j !== m.jamo)[Math.floor(Math.random() * (KEYS.length - 1))];
           emit({ type: 'recog', jamo, prob: +(0.55 + Math.random() * 0.44).toFixed(2), ms: 280 + Math.round(Math.random() * 520) });
           break;
         }

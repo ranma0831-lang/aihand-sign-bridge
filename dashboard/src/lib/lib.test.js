@@ -2,8 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { toJamo } from './hangul.js';
 import { summary, byDay, byLetter } from './stats.js';
-import { SIGNS, toAngles } from './signs.js';
-import { SIGN_KEYS, SCREEN_ONLY } from './hangul.js';
+import { assignHands, rowsToTable, rowsToHands, TABLE, KEYS } from './angleTable.js';
 
 const j = (w) => toJamo(w).seq.map((x) => x.jamo).join('');
 
@@ -13,6 +12,7 @@ test('자모 분해', () => {
   assert.equal(j('값'), 'ㄱㅏㅂㅅ');
   assert.equal(j('개 미'), 'ㄱㅐㅁㅣ');
   assert.deepEqual(toJamo('a가1').skipped, ['a']);
+  assert.deepEqual(toJamo('110').seq.map((x) => x.jamo), ['1', '10']);
   assert.equal(j('3층'), '3ㅊㅡㅇ');
 });
 
@@ -41,15 +41,41 @@ test('통계', () => {
   assert.deepEqual(byLetter(log, ['ㄱ', 'ㄴ']).map((e) => e.rate), [50, 0]);
 });
 
-test('손 모양표 → 서보 각도', () => {
-  assert.deepEqual(toAngles(SIGNS['ㅎ']), [50, 50, 50, 50, 50, 90]); // 엄지 척: 엄지 폄 50, 나머지 굽힘 50
-  assert.deepEqual(toAngles(SIGNS['ㅂ']), [130, 130, 130, 130, 130, 90]);
-  assert.deepEqual(toAngles(SIGNS['ㅗ']).slice(1, 3), [130, 50]);
-  assert.equal(toAngles(SIGNS['ㅗ'])[5], 180); // 손등
-  for (const k of SIGN_KEYS) {
-    assert.ok(k in SIGNS, k + ' 손 모양 없음');
-    assert.equal(SIGNS[k] === null, SCREEN_ONLY.has(k), k + ' 화면 대체 목록 불일치');
-  }
+test('각도표: 양식 행 → 표', () => {
+  // 열 순서를 일부러 바꾼 양식 (머리줄 이름으로 찾는지)
+  const rows = [
+    ['각도표 번호', '맡는 손', '글자', '손 방향(받침대)', '앞면', '서보1 엄지', '서보2 검지', '서보3 중지', '서보4 약지', '서보5 새끼', '서보6 손목', '상태', '확인한 사람', '메모'],
+    [1, '4', 'ㄱ', '아래', '손바닥', 90, 90, 0, 0, 0, 90, '확인됨', '이기태', ''],
+    [5, '1,2', 'ㅁ', '위', '손등', 180, 45, 45, 0, 0, 90, '초안', '', 'AI Hand로 못 냄(화면 안내)'],
+    [14, '1,2', 'ㅎ', '위', '손등', 90, 0, 0, 0, 0, 90, '초안', '', ''],
+    [17, '없음(화면 안내)', 'ㅓ', '옆', '손등', 135, 45, 0, 0, 0, 90, '초안', '', ''],
+    [41, '1,2', 10, '위', '손등', 90, 45, 90, 90, 999, 90, '초안', '', ''],
+  ];
+  const { order, table } = rowsToTable(rows);
+  assert.deepEqual(order, ['ㄱ', 'ㅁ', 'ㅎ', 'ㅓ', '10']);
+  assert.deepEqual(table['ㄱ'], { kind: '', dir: '아래', face: '손바닥', hands: [4], angles: [90, 90, 0, 0, 0, 90], status: '확인됨', checker: '이기태', note: '' });
+  assert.deepEqual(table['ㅁ'].hands, []); // 메모에 '화면 안내'
+  assert.deepEqual(table['ㅓ'].hands, []);
+  assert.deepEqual(table['ㅎ'].hands, [1, 2]);
+  assert.equal(table['10'].angles[4], 180); // 0~180으로 자름
+  assert.throws(() => rowsToTable([['번호', '글자']]), /열이 없습니다/);
+  assert.deepEqual(rowsToHands([['손 번호'], ['1번', '위', '손등', '세움', 'ㅁ ㅂ']]), [{ id: 1, dir: '위', face: '손등', role: 'ㅁ ㅂ' }]);
+});
+
+test('맡는 손 번갈아 고르기', () => {
+  const t = { 'ㅎ': { hands: [1, 2], angles: [1] }, 'ㅏ': { hands: [1, 2], angles: [2] }, 'ㄴ': { hands: [3], angles: [3] }, 'ㅓ': { hands: [], angles: [4] } };
+  const hands = (w) => assignHands([...w].map((jamo) => ({ jamo })), t).map((p) => p.hand);
+  assert.deepEqual(hands('ㅎㅏㄴㅏ'), [1, 2, 3, 1]); // 하나: ㅎ손1 ㅏ손2 ㄴ손3 ㅏ손1
+  assert.deepEqual(hands('ㅏㅏㅏ'), [1, 2, 1]);
+  assert.deepEqual(hands('ㅓ'), [null]); // 화면 안내
+  assert.deepEqual(hands('ㄲ'), [null]); // 표에 없는 글자(쌍자음)
+  assert.equal(assignHands([{ jamo: 'ㄴ' }], t)[0].angles[0], 3);
+});
+
+test('배포된 각도표 기본값', () => {
+  assert.equal(KEYS.length, 41);
+  for (const k of KEYS) assert.equal(TABLE[k].angles.length, 6, k);
+  assert.deepEqual(toJamo('10층').seq.map((x) => x.jamo), ['10', 'ㅊ', 'ㅡ', 'ㅇ']);
 });
 
 test('음성 안내 문장', async () => {

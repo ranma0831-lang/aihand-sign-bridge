@@ -1,25 +1,22 @@
 // 시스템 전체 상태: 손 5대, 지금 작업, 기록, 설정, 알림. 화면들은 useSystem()으로 읽는다.
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createBus, HAND_COUNT } from './bus.js';
-import { SIGN_KEYS, SCREEN_ONLY, VOWELS, toJamo } from './hangul.js';
-import { SIGNS, defaultHand, toAngles } from './signs.js';
+import { toJamo } from './hangul.js';
+import { HAND_LAYOUT, REST, TABLE, TABLE_INFO, assignHands, praiseAngles } from './angleTable.js';
 import * as hw from './hw.js';
 
 const Ctx = createContext(null);
 export const useSystem = () => useContext(Ctx);
 
 export const STATE_LABEL = { idle: '대기', run: '실행', done: '완료', error: '오류' };
-export const DIRS = ['세움', '왼쪽', '오른쪽', '뒤집기'];
+// 각도표 버전: 새 각도표를 배포하면 브라우저에 저장된 예전 각도표 대신 새 것을 쓴다
+const TABLE_VERSION = `${TABLE_INFO.source}@${TABLE_INFO.generated}`;
 
-// 각도·담당 손 기본값은 signs.js(교재 사진을 보고 읽은 손 모양표)에서 만든다. 실제 손으로 확인하며 설정 화면에서 고친다
+// 손 배치·각도는 각도표_양식(angleTable.js)에서 온다. 설정 화면에서 고친 값은 이 브라우저에만 남는다
 export const defaultSettings = () => ({
-  hands: [
-    { id: 1, dir: '세움', role: '자음·숫자' }, { id: 2, dir: '세움', role: '모음' },
-    { id: 3, dir: '왼쪽', role: '옆 방향 글자' }, { id: 4, dir: '오른쪽', role: '옆 방향 숫자' }, { id: 5, dir: '뒤집기', role: '아래 방향 글자' },
-  ],
-  assign: Object.fromEntries(SIGN_KEYS.map((k) => [k, defaultHand(k, SIGNS[k], VOWELS.has(k))])),
-  angles: Object.fromEntries([...SIGN_KEYS, '칭찬', '쉼'].map((k) => [k, toAngles(SIGNS[k])])),
-  screenOnly: [...SCREEN_ONLY],
+  tableVersion: TABLE_VERSION,
+  hands: HAND_LAYOUT.map((h) => ({ ...h })),
+  table: structuredClone(TABLE),
   stepMs: 1200,
   gapMs: 250,
   camera: true,
@@ -30,12 +27,20 @@ export const defaultSettings = () => ({
 const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* 저장 실패해도 화면은 동작 */ } };
 
+// 글자(또는 '쉼'·'칭찬')의 서보 각도 6개
+export const anglesOf = (st, key) => (key === '쉼' ? REST : key === '칭찬' ? praiseAngles(st.table) : st.table[key]?.angles);
+
 const idleHands = (hs) => hs.map((h) => ({ ...h, state: h.state === 'error' ? 'error' : 'idle', jamo: '' }));
 
 export function SystemProvider({ children }) {
   const [bus] = useState(() => createBus(new URLSearchParams(location.search).get('ws')));
 
-  const [settings, setSettings] = useState(() => ({ ...defaultSettings(), ...load('sb-settings-v2', {}) }));
+  const [settings, setSettings] = useState(() => {
+    const saved = load('sb-settings-v3', {});
+    // 각도표가 새로 배포됐으면 예전 손 배치·각도는 버리고 속도·카메라 같은 나머지 설정만 살린다
+    if (saved.tableVersion !== TABLE_VERSION) { delete saved.table; delete saved.hands; delete saved.tableVersion; }
+    return { ...defaultSettings(), ...saved };
+  });
   const [log, setLog] = useState(() => load('sb-log', []));
   const [board, setBoard] = useState(() => load('sb-board', [])); // 도전 모드 순위표
   const [hands, setHands] = useState(() =>
@@ -50,7 +55,7 @@ export function SystemProvider({ children }) {
 
   useEffect(() => save('sb-log', log), [log]);
   useEffect(() => save('sb-board', board), [board]);
-  useEffect(() => save('sb-settings-v2', settings), [settings]); // v2: 손 모양표 기본값 (예전 90° 임시값 무시)
+  useEffect(() => save('sb-settings-v3', settings), [settings]); // v3: 각도표_양식 기준
   const settingsRef = useRef(settings);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
   const [usb, setUsb] = useState([]); // 블루투스로 직접 연결된 손 번호
@@ -73,9 +78,10 @@ export function SystemProvider({ children }) {
         break;
       case 'step':
         if (m.hand) setHand(m.hand, { state: m.state === 'start' ? 'run' : 'done', jamo: m.jamo });
-        if (m.hand && m.state === 'start') {
+        // 블루투스 직접 연결은 테스트용: 가짜 데이터 모드일 때만 보낸다 (중앙 프로그램에 붙으면 그쪽이 손을 움직임)
+        if (m.hand && m.state === 'start' && !bus.real) {
           const st = settingsRef.current;
-          const angles = st.angles[m.jamo];
+          const angles = anglesOf(st, m.jamo);
           if (angles) hw.sendAngles(m.hand, angles, Math.min(600, st.stepMs * 0.5)).catch(() => toast(`손 ${m.hand} 블루투스 전송 실패`, 'error'));
         }
         if (m.i >= 0 && m.state === 'start') setJob((j) => ({ ...j, i: m.i, status: 'running' }));
@@ -86,7 +92,7 @@ export function SystemProvider({ children }) {
         const j = jobRef.current;
         setJob({ ...j, i: j.plan.length, status: 'done', ms: m.ms });
         setTimeout(() => setHands(idleHands), 800);
-        setTimeout(() => j.plan.forEach((p) => p.hand && hw.sendAngles(p.hand, settingsRef.current.angles['쉼'], 500).catch(() => {})), 800);
+        if (!bus.real) setTimeout(() => j.plan.forEach((p) => p.hand && hw.sendAngles(p.hand, REST, 500).catch(() => {})), 800);
         if (j.kind === 'express') addLog({ kind: '표현', text: j.word, ms: m.ms, ok: true, voice: j.voice, edited: j.edited });
         break;
       }
@@ -113,11 +119,7 @@ export function SystemProvider({ children }) {
   // 단어 → 손 배정까지 끝난 계획 [{jamo, syllable, hand|null, angles}]
   const makePlan = useCallback((word) => {
     const { seq, skipped } = toJamo(word);
-    const plan = seq.map((s) => {
-      const screen = settings.screenOnly.includes(s.jamo);
-      return { ...s, hand: screen ? null : settings.assign[s.jamo] ?? 1, angles: settings.angles[s.jamo] };
-    });
-    return { plan, skipped };
+    return { plan: assignHands(seq, settings.table), skipped }; // "1,2"처럼 두 손이 맡으면 번갈아
   }, [settings]);
 
   const timing = { stepMs: settings.stepMs, gapMs: settings.gapMs };
@@ -135,17 +137,19 @@ export function SystemProvider({ children }) {
     },
     // 학습 시범: 자모 하나. 손 배정을 돌려준다(null이면 화면 그림)
     demo(jamo) {
-      const hand = settings.screenOnly.includes(jamo) ? null : settings.assign[jamo] ?? 1;
-      setJob({ kind: 'demo', word: jamo, plan: [{ jamo, syllable: jamo, hand, angles: settings.angles[jamo] }], i: -1, status: 'running' });
-      bus.send({ type: 'demo', jamo, hand, angles: settings.angles[jamo], ...timing });
+      const [step] = assignHands([{ jamo, syllable: jamo }], settings.table);
+      const { hand, angles } = step;
+      setJob({ kind: 'demo', word: jamo, plan: [step], i: -1, status: 'running' });
+      bus.send({ type: 'demo', jamo, hand, angles, ...timing });
       return hand;
     },
     pause: () => bus.send({ type: 'pause' }),
     resume: () => bus.send({ type: 'resume' }),
     stop: () => bus.send({ type: 'stop' }),
     estop: () => { bus.send({ type: 'estop' }); setHands(idleHands); },
-    test: (hand, jamo) => bus.send({ type: 'test', hand, jamo, angles: settings.angles[jamo] }),
-    recognize: (jamo) => bus.send({ type: 'recognize', jamo }),
+    test: (hand, jamo) => bus.send({ type: 'test', hand, jamo, angles: anglesOf(settings, jamo) }),
+    // mode: 인식 모델이 고를 범위 (ㅏ와 1처럼 비슷한 모양이 섞이지 않게, 이정민 님 predict_in_mode)
+    recognize: (jamo) => bus.send({ type: 'recognize', jamo, mode: /^\d+$/.test(jamo) ? '숫자' : '글자' }),
     praise: (hand) => bus.send({ type: 'praise', hand }),
     systemOn(on) {
       setSystem(on);
@@ -164,7 +168,7 @@ export function SystemProvider({ children }) {
         });
         setUsb((u) => [...new Set([...u, hand])]);
         toast(`손 ${hand}을(를) 블루투스로 연결했습니다`, 'ok');
-        hw.sendAngles(hand, settings.angles['쉼'], 500);
+        hw.sendAngles(hand, REST, 500);
       } catch (e) {
         if (e?.name !== 'NotFoundError') toast(`손 ${hand} 연결 실패: micro:bit에 ✓가 떠 있는지, 다른 기기(휴대폰 앱 등)와 연결되어 있지 않은지 확인하세요 (${e?.message || e})`, 'error');
       }
