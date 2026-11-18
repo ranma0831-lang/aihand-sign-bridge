@@ -111,9 +111,18 @@ class Bridge:
             await self.hand(self.link.send, m["hand"], "ㅎ")   # 엄지 척
             await self.emit({"type": "step", "i": -1, "jamo": "칭찬", "hand": m["hand"], "state": "end"})
         elif t == "recognize":
-            target, timeout = m["jamo"], float(m.get("timeout", 10))
+            target, timeout = m["jamo"], float(m.get("timeout", 15))
+            # 손으로 못 내는 글자(맡을 손 없음)면 웹캠 창에 정답 그림을 자동으로 보여 줌 (one_loop.run과 같게)
+            steps = [s for s in self.plan_word(target) if s.sign.supported]
+            force_guide = bool(steps) and steps[0].hand is None
             loop = asyncio.get_running_loop()
-            ok, got, sec, note = await loop.run_in_executor(self.cam_pool, self.judge.judge, target, timeout, "대시보드 학습")
+            try:
+                # 11/18 one_loop: (정답, 잡힌 글자, 걸린 초, 비고, 정답 그림 봤는지). 예전 4개짜리도 받게 앞 4개만 쓴다
+                res = await loop.run_in_executor(
+                    self.cam_pool, lambda: self.judge.judge(target, timeout, "대시보드에서 연결됨", "대시보드 학습", force_guide))
+                ok, got, sec, note = res[:4]
+            except KeyboardInterrupt:   # 웹캠 창에서 q
+                ok, got, sec, note = False, "", 0, "웹캠 창에서 끝냄"
             # CamJudge는 확신도를 따로 주지 않아서 prob는 비움. 못 알아보면 jamo가 빈 문자열
             await self.emit({"type": "recog", "jamo": got or "", "prob": None, "ms": round(sec * 1000), "note": note})
 
