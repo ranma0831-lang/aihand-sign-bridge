@@ -104,8 +104,8 @@ export default function Learn() {
             <div className="flex flex-col items-center gap-2">
               <Icon name={result.ok ? 'check-circle-bold' : 'close-circle-bold'} className={`text-6xl ${result.ok ? 'text-ok' : 'text-bad'}`} />
               <p className="text-2xl font-bold">{result.ok ? '정답입니다' : '다시 해 볼까요'}</p>
-              <p className="text-mute">정답 <b className="text-ink">{target}</b> · 인식 <b className="text-ink">{result.jamo}</b></p>
-              <p className="text-sm text-mute num">정확도 {Math.round(result.prob * 100)}% · 피드백 {result.ms}ms</p>
+              <p className="text-mute">정답 <b className="text-ink">{target}</b> · 인식 <b className="text-ink">{result.jamo || "못 찾음"}</b></p>
+              <p className="text-sm text-mute num">{result.prob != null && `정확도 ${Math.round(result.prob * 100)}% · `}피드백 {result.ms}ms</p>
               {!result.ok && <p className="text-sm">AI Hand가 정답 동작을 다시 보여 줍니다</p>}
               <div className="flex gap-2 mt-2">
                 {!result.ok && <button onClick={retry} className="btn btn-dark"><Icon name="restart-bold" />다시 따라 하기</button>}

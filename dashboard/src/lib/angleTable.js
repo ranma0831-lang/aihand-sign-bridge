@@ -58,13 +58,15 @@ export function rowsToHands(rows) {
   return out;
 }
 
-// 글자마다 맡는 손 고르기. 후보가 둘 이상이면 바로 앞에서 쓴 손 다음 손을 써서 번갈아 쓴다. 후보 없으면 null(화면 안내)
+// 글자마다 맡는 손 고르기. 후보가 둘 이상이면 가장 오래 쉰 손(같으면 번호 작은 손) — 이정민 님 hand_assign.Assigner와 같은 규칙
+// 앞 글자가 남아 있는 동안 다음 글자를 다른 손이 보여 줄 수 있다. 후보가 없으면 null(화면 안내)
 export function assignHands(seq, table) {
-  let last = null;
+  const usedAt = {};
+  let turn = 0;
   return seq.map((s) => {
     const c = table[s.jamo]?.hands || [];
-    const hand = !c.length ? null : c.length > 1 && c.includes(last) ? c[(c.indexOf(last) + 1) % c.length] : c[0];
-    if (hand) last = hand;
+    const hand = c.length ? c.reduce((a, b) => ((usedAt[b] ?? -1) < (usedAt[a] ?? -1) ? b : a)) : null;
+    if (hand) usedAt[hand] = turn++;
     return { ...s, hand, angles: table[s.jamo]?.angles };
   });
 }

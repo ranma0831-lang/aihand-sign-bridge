@@ -67,7 +67,7 @@ export default function Challenge() {
       const ok = m.jamo === target;
       setRun({ ...r, phase: 'result', seen: m.jamo, results: [...r.results, ok] });
       addLog({ kind: '학습', text: target, ms: m.ms, ok, attempt: 1, prob: m.prob });
-      speak(ok ? '정답!' : `아쉬워요. ${jamoName(m.jamo)}${roParticle(jamoName(m.jamo))} 보였어요.`);
+      speak(ok ? '정답!' : m.jamo ? `아쉬워요. ${jamoName(m.jamo)}${roParticle(jamoName(m.jamo))} 보였어요.` : '아쉬워요. 손 모양을 알아보지 못했어요.');
       if (ok && r.hand) praise(r.hand);
       setTimeout(next, 1800);
     }
@@ -128,7 +128,7 @@ export default function Challenge() {
                     <p className="text-2xl font-semibold mt-1">
                       {run.phase === 'demo' && (run.hand ? `손 ${run.hand}의 시범을 보세요` : '화면 그림을 보세요')}
                       {run.phase === 'follow' && '카메라 앞에서 따라 하세요'}
-                      {run.phase === 'result' && (run.results.at(-1) ? '정답!' : `아쉬워요 (${run.seen}로 보임)`)}
+                      {run.phase === 'result' && (run.results.at(-1) ? '정답!' : `아쉬워요 (${run.seen ? `${run.seen}로 보임` : '손을 못 찾음'})`)}
                     </p>
                   </div>
                 </div>

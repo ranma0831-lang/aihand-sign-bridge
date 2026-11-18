@@ -21,7 +21,9 @@ export function startMessage(word, plan, skipped) {
   const parts = [`${word}${objParticle(word)} 지문자로 보여 드릴게요.`];
   const screen = [...new Set(plan.filter((p) => p.hand == null).map((p) => jamoName(p.jamo)))];
   if (screen.length) parts.push(`${screen.join(', ')}${objParticle(screen.at(-1))} 손으로 표현할 수 없어서 화면 그림으로 보여 드릴게요.`);
-  if (skipped.length) parts.push('한글이 아닌 글자는 건너뛸게요.');
+  const moving = [...new Set(plan.filter((p) => p.moving).map((p) => jamoName(p.source)))];
+  if (moving.length) parts.push(`${moving.join(', ')}${objParticle(moving.at(-1))} 기본 모양으로 보여 드려요. 실제로는 옆으로 움직여야 해요.`);
+  if (skipped.length) parts.push('범위 밖 글자는 건너뛸게요.');
   return parts.join(' ');
 }
 
@@ -43,4 +45,4 @@ export function roParticle(word) {
   return jong === 0 || jong === 8 ? '로' : '으로';
 }
 export const resultLine = (ok, target, seen) =>
-  ok ? '정답이에요. 잘했어요!' : `${jamoName(seen)}${roParticle(jamoName(seen))} 보였어요. ${jamoName(target)}${objParticle(jamoName(target))} 다시 보여 드릴게요.`;
+  ok ? '정답이에요. 잘했어요!' : !seen ? `손 모양을 알아보지 못했어요. ${jamoName(target)}${objParticle(jamoName(target))} 다시 보여 드릴게요.` : `${jamoName(seen)}${roParticle(jamoName(seen))} 보였어요. ${jamoName(target)}${objParticle(jamoName(target))} 다시 보여 드릴게요.`;

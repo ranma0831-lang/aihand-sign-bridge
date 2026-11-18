@@ -84,7 +84,7 @@ export default function Express() {
             )}
           </form>
           <p className="text-sm text-mute mt-3 min-h-5" role="status">
-            {preview.skipped.length > 0 && !shown && `한글이 아닌 글자(${preview.skipped.join(' ')})는 건너뜁니다. `}
+            {preview.skipped.length > 0 && !shown && `범위 밖 글자(${preview.skipped.join(' ')})는 건너뜁니다. 숫자는 1~10만 돼요. `}
             {job.kind === 'express' && job.status === 'done' && `'${job.word}' 표현을 마쳤습니다. ${(job.ms / 1000).toFixed(1)}초 걸렸어요.`}
             {job.kind === 'express' && job.status === 'stopped' && '중지했습니다.'}
           </p>

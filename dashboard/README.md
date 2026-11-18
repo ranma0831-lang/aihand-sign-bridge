@@ -37,6 +37,28 @@ npm test && npm run build
 - 서보 기준(양식): 엄지 펴짐 90 / 굽힘 180, 나머지 손가락 펴짐 90 / 굽힘 0, 손목 90 고정. 손등이 보이는 글자는 손을 받침대에 뒤돌려 세움.
 - 설정 화면에서 고친 각도는 그 브라우저에만 남습니다(현장 확인용). 확정 값은 xlsx에 적어 주세요.
 
+## 이정민 님 중앙 프로그램과 연결 (시연·통합용)
+
+손 제어와 인식은 이정민 님 `control/`(hand_assign, hand_link, one_loop)이 맡고, 대시보드는 화면만 맡습니다. 둘은 [`bridge/dashboard_bridge.py`](../bridge/dashboard_bridge.py)로 이어요. 이정민 님 파일은 고치지 않고 함수만 불러 씁니다.
+
+```
+대시보드(브라우저) ⇄ WebSocket ⇄ dashboard_bridge.py ⇄ control/ (plan_word · HandLink · CamJudge)
+                                                     ⇄ 중계 micro:bit(USB) → 무선 → 손 5대
+```
+
+1. `dashboard_bridge.py`를 `14조_AiHand_프로그램/control/` 폴더에 넣기 (recognition 폴더와 나란히)
+2. recognition/.venv 파이썬에 `pip install websockets pyserial`
+3. 실행
+   - `python dashboard_bridge.py --fake --sim` : 손·웹캠 없이 흐름만
+   - `python dashboard_bridge.py --fake` : 가짜 손 + 실제 웹캠 인식
+   - `python dashboard_bridge.py` : 실제 중계 micro:bit(자동으로 찾음, 또는 `--port COM5`) + 웹캠
+4. 대시보드를 `https://ranma0831-lang.github.io/aihand-sign-bridge/?ws=ws://localhost:8765` 로 열기 → 사이드바가 `PC 연결됨`
+
+- 연결되면 손 5대에 `펼침`을 보내 받음 응답으로 연결 상태를 표시합니다.
+- 표현·학습 시범·테스트·칭찬은 중계 micro:bit로 보내고, 손의 `동작 끝` 응답을 받은 뒤 다음 글자로 넘어가요.
+- 학습·도전의 따라 하기는 PC의 웹캠 창(CamJudge, 글자/숫자 모드)으로 인식하고, 결과만 대시보드로 옵니다. 이때 브라우저는 카메라를 켜지 않아요 (한 카메라를 두 프로그램이 같이 못 씀).
+- 단어 나누기와 손 고르기는 대시보드와 control이 같은 규칙입니다(30개 단어로 비교 확인): 쌍자음은 기본 자음 + 움직임, ㅘ→ㅗㅏ, 숫자 1~10만, "1,2" 손은 가장 오래 쉰 손.
+
 ## 테스트용 직접 연결 (블루투스)
 
 시연·통합 때는 **이정민 님 중앙 프로그램**이 중계 micro:bit로 손 5대를 움직입니다. 아래는 각도를 실제 손으로 확인할 때만 쓰는 테스트용 연결이에요. 대시보드가 중앙 프로그램(`?ws=`)에 연결되어 있으면 대시보드는 손에 직접 명령을 보내지 않습니다.

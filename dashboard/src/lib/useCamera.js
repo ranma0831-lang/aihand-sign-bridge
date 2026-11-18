@@ -7,7 +7,7 @@ import { cameraError, pickCamera } from './camera.js';
 
 const KEY = 'sb-cam';
 export function useCamera() {
-  const { settings } = useSystem();
+  const { settings, bus } = useSystem();
   const video = useRef(null);
   const stream = useRef(null);
   const [devices, setDevices] = useState([]);
@@ -25,7 +25,7 @@ export function useCamera() {
   }
 
   async function start(want = deviceId) {
-    if (!settings.camera || stream.current) return;
+    if (!settings.camera || stream.current || bus.real) return; // 중앙 프로그램 연결 중엔 웹캠을 그쪽(이정민 님 CamJudge)이 씀
     setError('');
     try {
       await open(want);

@@ -149,7 +149,7 @@ export function SystemProvider({ children }) {
     estop: () => { bus.send({ type: 'estop' }); setHands(idleHands); },
     test: (hand, jamo) => bus.send({ type: 'test', hand, jamo, angles: anglesOf(settings, jamo) }),
     // mode: 인식 모델이 고를 범위 (ㅏ와 1처럼 비슷한 모양이 섞이지 않게, 이정민 님 predict_in_mode)
-    recognize: (jamo) => bus.send({ type: 'recognize', jamo, mode: /^\d+$/.test(jamo) ? '숫자' : '글자' }),
+    recognize: (jamo) => bus.send({ type: 'recognize', jamo, mode: /^\d+$/.test(jamo) ? '숫자' : '글자', timeout: 10 }),
     praise: (hand) => bus.send({ type: 'praise', hand }),
     systemOn(on) {
       setSystem(on);

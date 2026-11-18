@@ -40,6 +40,7 @@ export function JamoChips({ plan, i, done }) {
             ${p.hand == null ? 'border-dashed' : ''}`}>
             <span className="text-2xl font-bold">{p.jamo}</span>
             <span className={`text-[10px] font-semibold ${now ? 'text-white/70' : 'text-mute'}`}>{p.hand == null ? '화면' : `손 ${p.hand}`}</span>
+            {p.source && <span className={`text-[10px] ${now ? 'text-white/70' : 'text-mute'}`} title={p.moving ? '실제로는 움직임이 필요한 글자' : '겹모음을 나눈 것'}>{p.source}{p.moving ? '·움직임' : ''}</span>}
           </li>
         );
       })}

@@ -12,7 +12,13 @@ test('자모 분해', () => {
   assert.equal(j('값'), 'ㄱㅏㅂㅅ');
   assert.equal(j('개 미'), 'ㄱㅐㅁㅣ');
   assert.deepEqual(toJamo('a가1').skipped, ['a']);
-  assert.deepEqual(toJamo('110').seq.map((x) => x.jamo), ['1', '10']);
+  // 이정민 님 word_to_sign.py와 같은 규칙
+  assert.deepEqual(toJamo('까치').seq.map((x) => x.jamo), ['ㄱ', 'ㅏ', 'ㅊ', 'ㅣ']);
+  assert.deepEqual(toJamo('까치').seq[0], { jamo: 'ㄱ', syllable: '까', source: 'ㄲ', moving: true });
+  assert.deepEqual(toJamo('과자').seq.map((x) => x.jamo), ['ㄱ', 'ㅗ', 'ㅏ', 'ㅈ', 'ㅏ']);
+  assert.deepEqual(toJamo('있다').seq.map((x) => x.jamo), ['ㅇ', 'ㅣ', 'ㅅ', 'ㄷ', 'ㅏ']); // 받침 ㅆ → ㅅ(움직임)
+  assert.deepEqual(toJamo('3층10').seq.map((x) => x.jamo), ['3', 'ㅊ', 'ㅡ', 'ㅇ', '10']);
+  assert.deepEqual(toJamo('12 07').skipped, ['12', '07']); // 11 이상·앞자리 0은 범위 밖
   assert.equal(j('3층'), '3ㅊㅡㅇ');
 });
 
@@ -67,6 +73,7 @@ test('맡는 손 번갈아 고르기', () => {
   const hands = (w) => assignHands([...w].map((jamo) => ({ jamo })), t).map((p) => p.hand);
   assert.deepEqual(hands('ㅎㅏㄴㅏ'), [1, 2, 3, 1]); // 하나: ㅎ손1 ㅏ손2 ㄴ손3 ㅏ손1
   assert.deepEqual(hands('ㅏㅏㅏ'), [1, 2, 1]);
+  assert.deepEqual(hands('ㅎㄴㅏ'), [1, 3, 2]); // 가장 오래 쉰 손 (hand_assign.Assigner)
   assert.deepEqual(hands('ㅓ'), [null]); // 화면 안내
   assert.deepEqual(hands('ㄲ'), [null]); // 표에 없는 글자(쌍자음)
   assert.equal(assignHands([{ jamo: 'ㄴ' }], t)[0].angles[0], 3);
@@ -76,6 +83,7 @@ test('배포된 각도표 기본값', () => {
   assert.equal(KEYS.length, 41);
   for (const k of KEYS) assert.equal(TABLE[k].angles.length, 6, k);
   assert.deepEqual(toJamo('10층').seq.map((x) => x.jamo), ['10', 'ㅊ', 'ㅡ', 'ㅇ']);
+  assert.deepEqual(toJamo('110').skipped, ['110']);
 });
 
 test('음성 안내 문장', async () => {
@@ -83,8 +91,10 @@ test('음성 안내 문장', async () => {
   assert.equal(objParticle('사랑'), '을');
   assert.equal(objParticle('나라'), '를');
   assert.equal(startMessage('사랑', [{ jamo: 'ㅅ', hand: 1 }], []), '사랑을 지문자로 보여 드릴게요.');
-  assert.equal(startMessage('까치', [{ jamo: 'ㄲ', hand: null }, { jamo: 'ㅏ', hand: 2 }], []),
-    '까치를 지문자로 보여 드릴게요. 쌍기역을 손으로 표현할 수 없어서 화면 그림으로 보여 드릴게요.');
+  assert.equal(startMessage('미', [{ jamo: 'ㅁ', hand: null }, { jamo: 'ㅣ', hand: 2 }], []),
+    '미를 지문자로 보여 드릴게요. 미음을 손으로 표현할 수 없어서 화면 그림으로 보여 드릴게요.');
+  assert.equal(startMessage('까', [{ jamo: 'ㄱ', hand: 4, source: 'ㄲ', moving: true }, { jamo: 'ㅏ', hand: 1 }], []),
+    '까를 지문자로 보여 드릴게요. 쌍기역을 기본 모양으로 보여 드려요. 실제로는 옆으로 움직여야 해요.');
   assert.match(startMessage('a', [], ['a']), /다시 말씀해/);
   assert.match(startMessage('가a', [{ jamo: 'ㄱ', hand: 1 }], ['a']), /건너뛸게요/);
 });
@@ -96,6 +106,7 @@ test('학습 음성 피드백과 순위', async () => {
   assert.equal(resultLine(false, 'ㄱ', 'ㄴ'), '니은으로 보였어요. 기역을 다시 보여 드릴게요.');
   assert.equal(resultLine(false, 'ㅏ', 'ㅓ'), '어로 보였어요. 아를 다시 보여 드릴게요.');
   assert.equal(resultLine(false, 'ㄱ', 'ㄹ'), '리을로 보였어요. 기역을 다시 보여 드릴게요.');
+  assert.equal(resultLine(false, 'ㄱ', ''), '손 모양을 알아보지 못했어요. 기역을 다시 보여 드릴게요.'); // 중앙 프로그램 시간 초과
   assert.match(demoLine('ㅁ', null), /화면 그림/);
   const r = rankBoard([{ name: 'a', score: 3, ms: 9 }, { name: 'b', score: 4, ms: 20 }, { name: 'c', score: 4, ms: 10 }]);
   assert.deepEqual(r.map((x) => x.name), ['c', 'b', 'a']);

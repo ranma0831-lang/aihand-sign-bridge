@@ -4,7 +4,7 @@ import { useSystem } from '../lib/store.jsx';
 import { Card, Icon } from './ui.jsx';
 
 export default function CameraBox({ cam, children }) {
-  const { settings } = useSystem();
+  const { settings, bus } = useSystem();
   // 화면에 들어오면 바로 켜서 손 위치를 미리 맞출 수 있게 한다
   useEffect(() => { cam.start(); }, [settings.camera]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -14,7 +14,7 @@ export default function CameraBox({ cam, children }) {
         <video ref={cam.video} autoPlay playsInline muted className="w-full h-full object-cover -scale-x-100" />
         {!cam.on && (
           <div className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-mute" role="status">
-            {!settings.camera ? '설정에서 카메라가 꺼져 있습니다' : cam.error ? (
+            {bus.real ? '중앙 프로그램이 웹캠으로 인식합니다. PC의 카메라 창을 보고 따라 하세요.' : !settings.camera ? '설정에서 카메라가 꺼져 있습니다' : cam.error ? (
               <div className="flex flex-col items-center gap-3">
                 <Icon name="videocamera-record-linear" className="text-3xl text-bad" />
                 <p className="text-ink max-w-sm">{cam.error}</p>
