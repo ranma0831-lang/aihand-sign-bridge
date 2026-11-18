@@ -120,3 +120,22 @@ test('실제 카메라 고르기', async () => {
   assert.equal(pickCamera([{ deviceId: 'v', label: 'OBS Virtual Camera' }], '').deviceId, 'v'); // 가상밖에 없으면 그거라도
   assert.match(cameraError({ name: 'NotReadableError' }), /Zoom/);
 });
+
+// 구글 시트 각도표: 주소 → CSV 주소, CSV → 각도표 (코드 안 각도표를 CSV로 바꿨다 되읽어 같은지)
+test('시트 각도표 읽기', async () => {
+  const { sheetCsvUrl, parseCsv, rowsToTable, TABLE, KEYS } = await import('./angleTable.js');
+  assert.equal(sheetCsvUrl('https://docs.google.com/spreadsheets/d/AbC_1-x/edit#gid=123'),
+    'https://docs.google.com/spreadsheets/d/AbC_1-x/export?format=csv&gid=123');
+  assert.equal(sheetCsvUrl('https://docs.google.com/spreadsheets/d/AbC/edit'), 'https://docs.google.com/spreadsheets/d/AbC/export?format=csv&gid=0');
+  assert.equal(sheetCsvUrl('https://example.com'), null);
+  assert.deepEqual(parseCsv('a,"1,2","x ""y""\nz"\r\n,,\r\nb,c'), [['a', '1,2', 'x "y"\nz'], ['b', 'c']]);
+  const q = (v) => `"${String(v).replace(/"/g, '""')}"`;
+  const head = ['종류', '글자', '손 방향', '앞면', '맡는 손', '서보1', '서보2', '서보3', '서보4', '서보5', '서보6', '상태', '확인한 사람', '메모'];
+  const lines = ['각도표 제목줄,,', head.join(','), ...KEYS.map((k) => {
+    const r = TABLE[k];
+    return [r.kind, k, r.dir, r.face, r.hands.length ? r.hands.join(',') : '없음(화면 안내)', ...r.angles, r.status, r.checker, r.note].map(q).join(',');
+  })];
+  const { order, table } = rowsToTable(parseCsv(lines.join('\r\n')));
+  assert.deepEqual(order, KEYS);
+  assert.deepEqual(table, TABLE);
+});

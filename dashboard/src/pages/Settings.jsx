@@ -9,7 +9,13 @@ const SERVOS = ['서보1 엄지', '서보2 검지', '서보3 중지', '서보4 �
 const handsLabel = (hs) => (!hs.length ? 'screen' : hs.join(','));
 
 export default function Settings() {
-  const { settings: s, updateSettings, resetSettings, toast } = useSystem();
+  const { settings: s, tableFrom, updateSettings, resetSettings, toast } = useSystem();
+  const from = {
+    code: `${TABLE_INFO.source || '기본값'} (${TABLE_INFO.generated})`,
+    loading: '구글 시트 읽는 중…',
+    sheet: `구글 시트 (${tableFrom.at}에 불러옴, 새로고침하면 다시 읽음)`,
+    error: `구글 시트를 못 읽어 ${TABLE_INFO.source} 사용 중: ${tableFrom.msg}`,
+  }[tableFrom.kind];
   const confirmed = KEYS.filter((k) => s.table[k]?.status === '확인됨').length;
 
   const setHandCfg = (id, patch) => updateSettings((p) => ({ hands: p.hands.map((h) => (h.id === id ? { ...h, ...patch } : h)) }));
@@ -86,7 +92,7 @@ export default function Settings() {
         <Card className="lg:col-span-12 !p-0 overflow-hidden">
           <div className="px-6 pt-5">
             <CardTitle icon="list-linear" right={<Pill tone={confirmed === KEYS.length ? 'ok' : 'idle'}>확인됨 {confirmed}/{KEYS.length}</Pill>}>
-              각도표 <span className="text-sm font-normal text-mute">· {TABLE_INFO.source || '기본값'} ({TABLE_INFO.generated})</span>
+              각도표 <span className={`text-sm font-normal ${tableFrom.kind === 'error' ? 'text-red-600' : 'text-mute'}`}>· {from}</span>
             </CardTitle>
             <p className="text-xs text-mute -mt-2 mb-3">서보 기준: 엄지 펴짐 90 / 굽힘 180, 나머지 손가락 펴짐 90 / 굽힘 0, 손목 90 고정. 쌍자음·ㅘ·ㅝ·ㅙ·ㅞ·11 이상은 움직임이 있어 항상 화면 안내.</p>
           </div>

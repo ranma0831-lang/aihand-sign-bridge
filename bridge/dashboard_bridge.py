@@ -20,6 +20,7 @@ import argparse
 import asyncio
 import json
 import sys
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -38,6 +39,16 @@ class Bridge:
         # 손 통신은 한 줄로 (중계 micro:bit 하나라서 동시에 보내지 않게), 웹캠 창은 늘 같은 스레드에서
         self.hand_pool = ThreadPoolExecutor(1)
         self.cam_pool = ThreadPoolExecutor(1)
+        self.idle_stop = threading.Event()   # set = 대기 화면 끝내기
+
+    def idle(self):
+        """다음 문제를 기다리는 동안 웹캠 창을 계속 그림 (안 그리면 Windows가 '응답 없음'으로 바꿈)"""
+        if not hasattr(self.judge, "wait_while"):   # wait_while이 없는 예전 one_loop
+            return
+        try:
+            self.judge.wait_while(self.idle_stop.wait, "대시보드 학습", [("다음 문제 준비 중", 36, (255, 255, 0))])
+        except KeyboardInterrupt:   # 웹캠 창에서 q
+            pass
 
     async def emit(self, msg):
         data = json.dumps(msg, ensure_ascii=False)
@@ -116,6 +127,7 @@ class Bridge:
             steps = [s for s in self.plan_word(target) if s.sign.supported]
             force_guide = bool(steps) and steps[0].hand is None
             loop = asyncio.get_running_loop()
+            self.idle_stop.set()   # 대기 화면을 끝내야 같은 스레드에서 판정이 시작됨
             try:
                 # 11/18 one_loop: (정답, 잡힌 글자, 걸린 초, 비고, 정답 그림 봤는지). 예전 4개짜리도 받게 앞 4개만 쓴다
                 res = await loop.run_in_executor(
@@ -125,6 +137,9 @@ class Bridge:
                 ok, got, sec, note = False, "", 0, "웹캠 창에서 끝냄"
             # CamJudge는 확신도를 따로 주지 않아서 prob는 비움. 못 알아보면 jamo가 빈 문자열
             await self.emit({"type": "recog", "jamo": got or "", "prob": None, "ms": round(sec * 1000), "note": note})
+            # clear는 여기서 (idle 안에서 하면, 다음 recognize의 set을 지워 판정이 영영 안 시작될 수 있음)
+            self.idle_stop.clear()
+            loop.run_in_executor(self.cam_pool, self.idle)
 
     async def serve(self, ws):
         self.clients.add(ws)
@@ -160,8 +175,10 @@ def main():
     link = HandLink(FakeGateway(), log=print) if a.fake else HandLink.open(a.port, log=print)
     judge = SimJudge("") if a.sim else CamJudge(a.cam)
 
+    made = {}
+
     async def run():
-        bridge = Bridge(link, judge, plan_word)
+        bridge = made["bridge"] = Bridge(link, judge, plan_word)
         async with websockets.serve(bridge.serve, "localhost", a.ws_port):
             print(f"대시보드 다리 준비: ws://localhost:{a.ws_port}  ({'가짜 손' if a.fake else '중계 micro:bit'}, {'인식 시뮬레이션' if a.sim else '웹캠 인식'})")
             print(f"대시보드 주소 뒤에 ?ws=ws://localhost:{a.ws_port} 를 붙여 여세요. 끝내려면 Ctrl+C")
@@ -172,6 +189,9 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
+        if "bridge" in made:   # 대기 화면을 먼저 끝내야 웹캠을 닫을 수 있음
+            made["bridge"].idle_stop.set()
+            made["bridge"].cam_pool.shutdown(wait=True)
         judge.close()
 
 

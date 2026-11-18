@@ -2,7 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createBus, HAND_COUNT } from './bus.js';
 import { toJamo } from './hangul.js';
-import { HAND_LAYOUT, REST, TABLE, TABLE_INFO, assignHands, praiseAngles } from './angleTable.js';
+import { HAND_LAYOUT, REST, SHEET_URL, TABLE, TABLE_INFO, assignHands, fetchSheetTable, praiseAngles } from './angleTable.js';
 import * as hw from './hw.js';
 
 const Ctx = createContext(null);
@@ -41,6 +41,17 @@ export function SystemProvider({ children }) {
     if (saved.tableVersion !== TABLE_VERSION) { delete saved.table; delete saved.hands; delete saved.tableVersion; }
     return { ...defaultSettings(), ...saved };
   });
+  // 각도표 출처: 시트 주소가 있으면 열 때마다 시트를 읽어 덮어쓴다 (시트가 기준, 못 읽으면 코드 안 각도표)
+  const [tableFrom, setTableFrom] = useState(SHEET_URL ? { kind: 'loading' } : { kind: 'code' });
+  useEffect(() => {
+    if (!SHEET_URL) return;
+    fetchSheetTable()
+      .then((table) => {
+        setSettings((s) => ({ ...s, table }));
+        setTableFrom({ kind: 'sheet', at: new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) });
+      })
+      .catch((e) => setTableFrom({ kind: 'error', msg: e.message }));
+  }, []);
   const [log, setLog] = useState(() => load('sb-log', []));
   const [board, setBoard] = useState(() => load('sb-board', [])); // 도전 모드 순위표
   const [hands, setHands] = useState(() =>
@@ -184,7 +195,7 @@ export function SystemProvider({ children }) {
   };
 
   return (
-    <Ctx.Provider value={{ bus, settings, log, hands, job, conn, system, toasts, subs, usb, usbReply, board, hwSupported: hw.hwSupported, ...actions }}>
+    <Ctx.Provider value={{ bus, settings, tableFrom, log, hands, job, conn, system, toasts, subs, usb, usbReply, board, hwSupported: hw.hwSupported, ...actions }}>
       {children}
     </Ctx.Provider>
   );

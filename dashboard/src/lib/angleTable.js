@@ -9,6 +9,43 @@ export const KEYS = DATA.order;        // 양식 순서 (자음 14, 모음 17, �
 export const HAND_LAYOUT = DATA.hands; // [{ id, dir, face, role }]
 export const TABLE_INFO = { source: DATA.source, generated: DATA.generated };
 
+// 각도표 구글 시트: '각도표' 탭을 연 상태의 주소창 주소를 그대로 붙여 넣기 (…/d/<ID>/edit#gid=<탭번호>)
+// 비워 두면 코드 안 각도표(angleTable.data.js)를 쓴다. 시트 공유는 '링크가 있는 모든 사용자 - 뷰어'여야 브라우저가 읽을 수 있다
+export const SHEET_URL = '';
+
+// 시트 주소 → CSV 내려받기 주소 (gviz는 열마다 형식을 하나로 맞춰 '1,2'나 숫자 글자를 지워서 export를 쓴다)
+export function sheetCsvUrl(url) {
+  const id = url.match(/\/spreadsheets\/d\/([\w-]+)/)?.[1];
+  const gid = url.match(/[#&?]gid=(\d+)/)?.[1] ?? '0';
+  return id ? `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}` : null;
+}
+
+// CSV 글 → 행 배열 (따옴표 안의 쉼표·줄바꿈·"" 처리)
+export function parseCsv(text) {
+  const rows = [[]];
+  let cell = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) {
+      if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; } else if (ch === '"') q = false; else cell += ch;
+    } else if (ch === '"') q = true;
+    else if (ch === ',') { rows.at(-1).push(cell); cell = ''; }
+    else if (ch === '\n') { rows.at(-1).push(cell.replace(/\r$/, '')); cell = ''; rows.push([]); }
+    else cell += ch;
+  }
+  rows.at(-1).push(cell);
+  return rows.filter((r) => r.some((c) => c !== ''));
+}
+
+// 시트에서 각도표 읽기. 공유가 안 돼 있으면 로그인 페이지가 와서 '글자' 머리줄 오류가 난다
+export async function fetchSheetTable(url = SHEET_URL) {
+  const csv = sheetCsvUrl(url);
+  if (!csv) throw new Error('시트 주소가 아닙니다');
+  const res = await fetch(csv, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`시트를 못 읽었습니다 (${res.status})`);
+  return rowsToTable(parseCsv(await res.text())).table;
+}
+
 export const REST = [90, 90, 90, 90, 90, 90]; // 쉼: 모두 펼침, 손목 정면
 export const DIRS = ['위', '옆', '아래'];
 export const FACES = ['손바닥', '손등'];
