@@ -10,7 +10,7 @@ const isVowel = (k) => k >= 'ㅏ' && k <= 'ㅣ';
 const SECTIONS = [
   { title: '자음', icon: 'text-bold', keys: KEYS.filter((k) => !/^\d+$/.test(k) && !isVowel(k)) },
   { title: '모음', icon: 'text-italic-linear', keys: KEYS.filter(isVowel) },
-  { title: '숫자', icon: 'calculator-linear', keys: Array.from({ length: 15 }, (_, i) => String(i + 1)) },
+  { title: '숫자', icon: 'calculator-linear', keys: KEYS.filter((k) => /^\d+$/.test(k)) },
 ];
 
 // 그림이 없으면(배포본에 그림을 안 올린 경우) 글자를 크게 보여 준다
@@ -24,15 +24,15 @@ function SignImage({ k, className = '' }) {
 export default function Chart() {
   const { settings } = useSystem();
   const [pick, setPick] = useState(null);
-  // AI Hand가 맡는지: 각도표에 맡는 손이 있으면 손 번호, 없으면 화면 안내. 11 이상은 움직임이 있어 항상 화면
+  // AI Hand가 맡는지: 각도표에 맡는 손이 있으면 손 번호, 없으면 화면 안내
   const who = (k) => {
     const hs = settings.table[k]?.hands || [];
-    return hs.length ? `손 ${hs.join(',')}` : Number(k) > 10 ? '움직임 · 화면' : '화면 안내';
+    return hs.length ? `손 ${hs.join(',')}` : '화면 안내';
   };
 
   return (
     <>
-      <PageHead title="지문자 표" sub="자음 14개, 모음 17개, 숫자 손 모양을 모았어요. 그림을 누르면 크게 볼 수 있어요." />
+      <PageHead title="지문자 표" sub="자음 14개, 모음 17개, 숫자 1~10 손 모양을 모았어요. 그림을 누르면 크게 볼 수 있어요." />
       <div className="grid gap-4">
         {SECTIONS.map((s) => (
           <Card key={s.title}>
@@ -50,7 +50,7 @@ export default function Chart() {
             </ul>
           </Card>
         ))}
-        <p className="text-xs text-mute text-center">그림: 국립장애인도서관 · 숫자 11~15는 두 동작을 이어서 하거나 움직임이 있어 AI Hand 대신 화면으로 보여 줍니다.</p>
+        <p className="text-xs text-mute text-center">그림: 국립장애인도서관 · 숫자는 우리 팀이 구현한 1~10까지 실었습니다.</p>
       </div>
 
       {/* body에 붙인다: 본문 틀(frame)의 효과 때문에 fixed가 화면이 아니라 틀 기준이 되는 것을 피함 */}
