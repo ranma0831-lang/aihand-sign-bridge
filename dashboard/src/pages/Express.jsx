@@ -1,5 +1,6 @@
 // ② 지문자 표현: 텍스트·음성 입력 → 자모 분해 → 손 배정 → 순서대로 표현 (F-01, F-02, F-09)
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { PageHead } from '../components/Shell.jsx';
 import { Card, CardTitle, Icon, Pill } from '../components/ui.jsx';
 import { JamoChips } from '../components/hands.jsx';
@@ -7,12 +8,19 @@ import { useSystem } from '../lib/store.jsx';
 import { jobView } from './Dashboard.jsx';
 import { say, startMessage } from '../lib/speech.js';
 
+// 시연용 예시 단어. 각도표 기준으로 모두 손으로 되는 단어는 진하게, 화면 안내 글자가 섞이면 점선
+const EXAMPLES = ['사랑', '하이', '이애', '안녕', '아기', '우유', '나비', '4'];
+const TIP_KEY = 'sb-guide-tip-closed';
+const tipClosed = () => { try { return localStorage.getItem(TIP_KEY) === '1'; } catch { return false; } };
+
 const SR = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
 
 export default function Express() {
   const { job, makePlan, express, pause, resume, stop, settings, toast } = useSystem();
   const [word, setWord] = useState('');
   const [listening, setListening] = useState(false);
+  const [tip, setTip] = useState(!tipClosed());
+  const closeTip = () => { setTip(false); try { localStorage.setItem(TIP_KEY, '1'); } catch { /* 저장 못 해도 이번엔 닫힘 */ } };
   const active = (job.status === 'running' || job.status === 'paused') && job.kind === 'express';
   const shown = active || (job.kind === 'express' && job.status !== 'idle');
   const preview = useMemo(() => makePlan(word), [word, makePlan]);
@@ -61,6 +69,14 @@ export default function Express() {
   return (
     <>
       <PageHead title="지문자 표현" sub="단어를 입력하면 자모로 나눠 AI Hand 5대가 차례로 보여 줍니다. 2~3글자 단어를 추천해요." />
+      {tip && (
+        <div className="flex flex-wrap items-center gap-3 mb-4 px-5 py-3 rounded-3xl bg-amber-100 text-amber-900">
+          <Icon name="lightbulb-bolt-linear" className="text-2xl" />
+          <p className="flex-1 min-w-[12rem] font-semibold">처음이세요? 사용법을 먼저 보면 쉬워요.</p>
+          <Link to="/guide" className="btn bg-amber-900 text-white text-sm !py-2">사용법 보기<Icon name="arrow-right-linear" /></Link>
+          <button onClick={closeTip} aria-label="안내 닫기" className="p-2 rounded-full hover:bg-amber-200"><Icon name="close-circle-linear" className="text-xl" /></button>
+        </div>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <Card className="lg:col-span-12">
           <form onSubmit={start} className="flex flex-wrap gap-2">
@@ -83,6 +99,17 @@ export default function Express() {
               </>
             )}
           </form>
+          <div className="flex flex-wrap items-center gap-2 mt-3">
+            <span className="text-sm text-mute mr-1">예시</span>
+            {EXAMPLES.map((w) => {
+              const ok = makePlan(w).plan.every((p) => p.hand != null);
+              return (
+                <button key={w} type="button" disabled={active} onClick={() => { setWord(w); run(w, false); }}
+                  title={ok ? '모두 손으로 표현돼요' : '일부 글자는 화면으로 보여 줘요'}
+                  className={`px-4 py-1.5 rounded-full text-sm font-semibold border-2 transition disabled:opacity-35 ${ok ? 'border-ink bg-ink text-white' : 'border-dashed border-ink/40 hover:bg-black/5'}`}>{w}</button>
+              );
+            })}
+          </div>
           <p className="text-sm text-mute mt-3 min-h-5" role="status">
             {preview.skipped.length > 0 && !shown && `범위 밖 글자(${preview.skipped.join(' ')})는 건너뜁니다. 숫자는 1~10만 돼요. `}
             {job.kind === 'express' && job.status === 'done' && `'${job.word}' 표현을 마쳤습니다. ${(job.ms / 1000).toFixed(1)}초 걸렸어요.`}
