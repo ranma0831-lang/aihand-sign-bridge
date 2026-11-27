@@ -25,6 +25,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+SCREEN_HINT = set()   # main()에서 control/word_to_sign.py 값으로 바꿈
+
 HANDS = (1, 2, 3, 4, 5)
 ALIAS = {"쉼": "펼침", "칭찬": "ㅎ"}   # 대시보드 이름 → control 모양 이름
 
@@ -67,24 +69,26 @@ class Bridge:
             ok = await self.hand(lambda h=h: self.link.send(h, "펼침", wait_done=False))
             await self.emit({"type": "hand_status", "hand": h, "connected": bool(ok)})
 
-    async def play(self, word, step_ms, gap_ms):
-        """단어를 손으로 보여 줌. 화면 안내 글자는 손 없이 step_ms만큼 보여 줌"""
+    async def play(self, word, step_ms, gap_ms, popup_ms=3000):
+        """단어를 손으로 보여 줌. 대시보드가 그림 팝업을 띄우는 글자(맡을 손 없음, 화면 안내 ㅓ ㅕ ㅔ ㅖ)는
+        사람이 그림을 볼 수 있게 popup_ms만큼 머문 뒤 다음 글자로"""
         t0 = time.time()
         steps = [s for s in self.plan_word(word) if s.sign.supported]
         used = set()
         for i, st in enumerate(steps):
             await self.paused.wait()
             shape, hand = st.sign.shape, st.hand
+            hold = max(step_ms, popup_ms) if hand is None or shape in SCREEN_HINT else step_ms
             await self.emit({"type": "step", "i": i, "jamo": shape, "hand": hand, "state": "start"})
             if hand is None:
-                await asyncio.sleep(step_ms / 1000)
+                await asyncio.sleep(hold / 1000)
             else:
                 if not await self.hand(self.link.send, hand, shape):
                     await self.emit({"type": "error", "hand": hand, "msg": f"'{shape}' 전달 실패 (전원·손 번호·무선 그룹 확인)"})
                     await self.emit({"type": "stopped"})
                     return
                 used.add(hand)
-                await asyncio.sleep(max(0, step_ms - 400) / 1000)   # 사람이 볼 수 있게 잠깐 유지 (손 동작 400ms는 이미 지남)
+                await asyncio.sleep(max(0, hold - 400) / 1000)   # 사람이 볼 수 있게 잠깐 유지 (손 동작 400ms는 이미 지남)
             await self.emit({"type": "step", "i": i, "jamo": shape, "hand": hand, "state": "end"})
             await asyncio.sleep(gap_ms / 1000)
         await self.emit({"type": "done", "ms": round((time.time() - t0) * 1000)})
@@ -99,9 +103,9 @@ class Bridge:
 
     async def handle(self, m):
         t = m.get("type")
-        step_ms, gap_ms = m.get("stepMs", 1200), m.get("gapMs", 250)
+        step_ms, gap_ms, popup_ms = m.get("stepMs", 1200), m.get("gapMs", 250), m.get("popupMs", 3000)
         if t in ("express", "demo"):
-            self.start_job(self.play(m.get("word") or m.get("jamo", ""), step_ms, gap_ms))
+            self.start_job(self.play(m.get("word") or m.get("jamo", ""), step_ms, gap_ms, popup_ms))
         elif t == "pause":
             self.paused.clear(); await self.emit({"type": "paused"})
         elif t == "resume":
@@ -168,6 +172,11 @@ def main():
     sys.path.insert(0, str(control))
     sys.path.insert(0, str(control.parent / "recognition"))
     from hand_assign import plan_word
+    global SCREEN_HINT
+    try:   # 11/25부터: 손이 짝 모양을 내고 화면 안내도 띄우는 글자 (ㅓ ㅕ ㅔ ㅖ)
+        from word_to_sign import SCREEN_HINT
+    except ImportError:   # 예전 control
+        SCREEN_HINT = set()
     from hand_link import FakeGateway, HandLink
     from one_loop import CamJudge, SimJudge
     import websockets

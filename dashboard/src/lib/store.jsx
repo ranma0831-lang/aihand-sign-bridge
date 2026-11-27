@@ -19,6 +19,7 @@ export const defaultSettings = () => ({
   table: structuredClone(TABLE),
   stepMs: 1200,
   gapMs: 250,
+  popupMs: 3000, // 그림 팝업이 뜨는 글자(맡을 손 없음 · 화면 안내)는 사람이 그림을 볼 수 있게 더 오래 머문다
   camera: true,
   voice: true,
 });
@@ -133,8 +134,8 @@ export function SystemProvider({ children }) {
     return { plan: assignHands(seq, settings.table), skipped }; // "1,2"처럼 두 손이 맡으면 번갈아
   }, [settings]);
 
-  const timing = { stepMs: settings.stepMs, gapMs: settings.gapMs };
-  const wire = (plan) => plan.map(({ jamo, hand, angles }) => ({ jamo, hand, angles }));
+  const timing = { stepMs: settings.stepMs, gapMs: settings.gapMs, popupMs: settings.popupMs };
+  const wire = (plan) => plan.map(({ jamo, hand, hint, angles }) => ({ jamo, hand, hint, angles }));
 
   const actions = {
     makePlan,

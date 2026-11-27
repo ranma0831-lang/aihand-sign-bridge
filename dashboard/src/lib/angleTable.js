@@ -111,6 +111,19 @@ export function assignHands(seq, table) {
 
 export const isScreen = (table, key) => !(table[key]?.hands?.length);
 
+// 손 모양이 완전히 같은 글자 묶음 (같은 손 + 같은 각도라 손만 보고는 구분 안 됨: ㄹ=ㅌ, ㅂ=4 …). 화면 안내 글자는 뺀다
+export function sameShapeGroups(table, keys) {
+  const by = {};
+  for (const k of keys) {
+    const r = table[k];
+    if (!r?.hands?.length || r.hint) continue;
+    (by[`${r.hands.join(',')}|${r.angles.join(',')}`] ||= []).push(k);
+  }
+  return Object.values(by).filter((g) => g.length > 1);
+}
+// 화면 안내 글자(ㅓ)가 손으로 대신 내는 짝 모양(ㅏ)
+export const hintPair = (table, keys, k) => keys.find((o) => o !== k && !table[o]?.hint && table[o]?.hands?.join() === table[k].hands.join() && table[o].angles.join() === table[k].angles.join());
+
 // 맞히기(5.4) 문제로 낼 수 있는 글자: 손이 맡고, 화면 안내가 따로 필요 없는 글자
 export const quizPool = (table, keys) => keys.filter((k) => table[k]?.hands?.length && !table[k].hint);
 

@@ -2,8 +2,41 @@
 // 각도표 원본은 xlsx → `npm run angles -- 각도표.xlsx`로 반영. 여기서 고친 값은 이 브라우저에만 남는다 (현장 확인용)
 import { PageHead } from '../components/Shell.jsx';
 import { Card, CardTitle, Icon, Pill } from '../components/ui.jsx';
-import { DIRS, FACES, KEYS, TABLE_INFO } from '../lib/angleTable.js';
+import { DIRS, FACES, KEYS, TABLE_INFO, hintPair, sameShapeGroups } from '../lib/angleTable.js';
+import { DOUBLE, VOWEL_SPLIT } from '../lib/hangul.js';
 import { useSystem } from '../lib/store.jsx';
+
+// AI Hand로 못 내거나 구분이 안 되는 글자. 각도표(s.table)에서 계산해서 각도표가 바뀌면 같이 바뀐다
+function LimitsCard({ table }) {
+  const screen = KEYS.filter((k) => !table[k]?.hands?.length);
+  const hints = KEYS.filter((k) => table[k]?.hint);
+  const same = sameShapeGroups(table, KEYS);
+  const chip = (t, k) => <span key={k ?? t} className="px-3 py-1 rounded-full bg-black/5 text-sm font-semibold">{t}</span>;
+  const rows = [
+    { icon: 'running-round-linear', title: '움직임이 있는 글자 → 범위 밖', note: '손은 멈춘 모양만 낼 수 있어요. 쌍자음은 기본 자음 모양만, 겹모음은 두 모음으로 나눠 차례로, 숫자 11 이상은 건너뜁니다.',
+      chips: [...Object.entries(DOUBLE).map(([d, b]) => `${d}→${b}`), ...Object.entries(VOWEL_SPLIT).map(([v, p]) => `${v}→${p.join('')}`), '11 이상'] },
+    { icon: 'compass-linear', title: '손 방향이 없는 글자 → 짝 모양 + 화면 안내', note: '손끝이 앞을 향하는 방향은 손 배치 4가지에 없어서, 손가락이 같은 글자 모양을 내고 화면에 지문자 그림을 띄워요.',
+      chips: hints.map((k) => `${k} (${hintPair(table, KEYS, k) ?? '?'} 모양)`) },
+    { icon: 'copy-linear', title: '손 모양이 같은 글자 → 손만 보고는 구분 안 됨', note: '같은 손이 같은 각도로 만들어요. 손가락을 벌리거나 끝마디만 굽힐 수 없어서 생깁니다. 맞히기 화면에서 헷갈리는 보기로 나와요.',
+      chips: same.map((g) => g.join(' = ')) },
+    { icon: 'gallery-wide-linear', title: '맡을 손이 없는 글자 → 화면 그림만', note: '각도표의 맡는 손이 "없음"인 글자예요.',
+      chips: screen.length ? screen : ['없음 (모두 손으로 표현)'] },
+  ];
+  return (
+    <Card className="lg:col-span-12">
+      <CardTitle icon="danger-triangle-linear" right={<span className="text-xs text-mute">각도표에서 자동 계산</span>}>AI Hand로 못 내는 글자 · 숫자</CardTitle>
+      <div className="grid md:grid-cols-2 gap-4">
+        {rows.map((r) => (
+          <div key={r.title} className="rounded-3xl bg-white/70 border border-black/5 p-4">
+            <p className="font-semibold flex items-center gap-2"><Icon name={r.icon} className="text-lg shrink-0" />{r.title}</p>
+            <div className="flex flex-wrap gap-2 my-3">{r.chips.map((t) => chip(t))}</div>
+            <p className="text-xs text-mute leading-relaxed">{r.note}</p>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
 
 const SERVOS = ['서보1 엄지', '서보2 검지', '서보3 중지', '서보4 약지', '서보5 새끼', '서보6 손목'];
 const handsLabel = (hs) => (!hs.length ? 'screen' : hs.join(','));
@@ -80,6 +113,11 @@ export default function Settings() {
             <span className="flex justify-between"><span>자모 사이 대기 시간</span><b className="num">{s.gapMs}ms</b></span>
             <input type="range" min="0" max="1500" step="50" value={s.gapMs} onChange={(e) => updateSettings({ gapMs: +e.target.value })} className="accent-ink" />
           </label>
+          <label className="grid gap-1 text-sm">
+            <span className="flex justify-between"><span>그림 팝업 글자 보여 주는 시간</span><b className="num">{(s.popupMs / 1000).toFixed(1)}초</b></span>
+            <input type="range" min="1500" max="8000" step="500" value={s.popupMs} onChange={(e) => updateSettings({ popupMs: +e.target.value })} className="accent-ink" />
+            <span className="text-xs text-mute">손으로 못 내는 글자(ㅓ ㅕ ㅔ ㅖ 등)는 이 시간 동안 그림을 띄우고 다음 글자로 넘어가요</span>
+          </label>
           {[['camera', '학습 모드 카메라 사용'], ['voice', '음성 입력·음성 안내 사용']].map(([k, label]) => (
             <label key={k} className="flex items-center justify-between text-sm">
               {label}
@@ -89,12 +127,14 @@ export default function Settings() {
           <button onClick={resetSettings} className="btn btn-light text-sm mt-auto">각도표 기본값으로 되돌리기</button>
         </Card>
 
+        <LimitsCard table={s.table} />
+
         <Card className="lg:col-span-12 !p-0 overflow-hidden">
           <div className="px-6 pt-5">
             <CardTitle icon="list-linear" right={<Pill tone={confirmed === KEYS.length ? 'ok' : 'idle'}>확인됨 {confirmed}/{KEYS.length}</Pill>}>
               각도표 <span className={`text-sm font-normal ${tableFrom.kind === 'error' ? 'text-red-600' : 'text-mute'}`}>· {from}</span>
             </CardTitle>
-            <p className="text-xs text-mute -mt-2 mb-3">서보 기준(11/25): 엄지 폄 90 / 굽힘 0, 나머지 손가락 폄 140 / 굽힘 0, 손목 90 고정. ㅓ ㅕ ㅔ ㅖ는 1·2번 손 + 화면 안내. 쌍자음·ㅘ·ㅝ·ㅙ·ㅞ·11 이상은 움직임이 있어 항상 화면 안내.</p>
+            <p className="text-xs text-mute -mt-2 mb-3">서보 기준(11/25): 엄지 폄 90 / 굽힘 0, 나머지 손가락 폄 140 / 굽힘 0, 손목 90 고정. 못 내는 글자는 위 카드에 정리.</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm num">

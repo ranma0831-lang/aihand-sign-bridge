@@ -33,15 +33,15 @@ export function mockBus() {
   const emit = (m) => setTimeout(() => fns.forEach((f) => f(m)), 0);
   let run = 0, paused = false, greeted = false;
 
-  async function play(plan, { stepMs = 1200, gapMs = 250 }) {
+  async function play(plan, { stepMs = 1200, gapMs = 250, popupMs = 3000 }) {
     const my = ++run; paused = false;
     const t0 = performance.now();
     for (let i = 0; i < plan.length; i++) {
       while (paused && my === run) await wait(100);
       if (my !== run) return;
-      const { jamo, hand } = plan[i];
+      const { jamo, hand, hint } = plan[i];
       emit({ type: 'step', i, jamo, hand, state: 'start' });
-      await wait(stepMs);
+      await wait(hand == null || hint ? Math.max(stepMs, popupMs) : stepMs); // 그림 팝업 글자는 더 오래
       if (my !== run) return;
       emit({ type: 'step', i, jamo, hand, state: 'end' });
       await wait(gapMs);

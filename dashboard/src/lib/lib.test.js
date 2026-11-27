@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { toJamo } from './hangul.js';
 import { summary, byDay, byLetter } from './stats.js';
-import { assignHands, quizChoices, quizPool, rowsToTable, rowsToHands, TABLE, KEYS } from './angleTable.js';
+import { assignHands, hintPair, quizChoices, quizPool, sameShapeGroups, rowsToTable, rowsToHands, TABLE, KEYS } from './angleTable.js';
 
 const j = (w) => toJamo(w).seq.map((x) => x.jamo).join('');
 
@@ -45,6 +45,13 @@ test('통계', () => {
   assert.equal(d[6].count, 4); // 오늘: 학습 3 + 표현 1 (테스트 제외)
   assert.equal(d[5].count, 1);
   assert.deepEqual(byLetter(log, ['ㄱ', 'ㄴ']).map((e) => e.rate), [50, 0]);
+});
+
+test('못 내는 글자: 같은 모양 묶음과 짝 모양', () => {
+  const groups = sameShapeGroups(TABLE, KEYS).map((g) => g.join(''));
+  for (const g of ['ㄹㅌ', 'ㅂ4', 'ㅅㅠ', 'ㄴ6']) assert.ok(groups.includes(g), g); // 11/25 각도표 회의 안건과 같음
+  assert.ok(!groups.some((g) => g.includes('ㅓ'))); // 화면 안내 글자는 따로
+  assert.equal(hintPair(TABLE, KEYS, 'ㅓ'), 'ㅏ');
 });
 
 test('맞히기: 문제 글자와 보기', () => {
