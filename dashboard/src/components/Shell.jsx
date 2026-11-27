@@ -6,12 +6,13 @@ import { Icon } from './ui.jsx';
 import JamoPopup from './JamoPopup.jsx';
 
 export const USER_NAV = [
-  { to: '/', label: '지문자 표현', icon: 'text-square-linear' },
+  { to: '/', label: '홈', icon: 'home-2-linear' },
+  { to: '/express', label: '지문자 표현', icon: 'text-square-linear' },
   { to: '/learn', label: '학습', icon: 'book-bookmark-linear' },
-  { to: '/challenge', label: '도전', icon: 'cup-star-linear' },
+  { to: '/challenge', label: '도전', icon: 'cup-star-linear', wide: true },
   { to: '/quiz', label: '맞히기', icon: 'question-square-linear' },
-  { to: '/chart', label: '지문자 표', icon: 'gallery-wide-linear' },
-  { to: '/guide', label: '사용법', icon: 'question-circle-linear', tip: true },
+  { to: '/chart', label: '지문자 표', icon: 'gallery-wide-linear', wide: true },
+  { to: '/guide', label: '사용법', icon: 'question-circle-linear', tip: true, wide: true },
 ];
 export const ADMIN_NAV = [
   { to: '/admin', label: '통합 관제', icon: 'widget-5-linear' },
@@ -58,6 +59,7 @@ function Toasts() {
 export default function Shell({ children }) {
   const admin = isAdminPath(useLocation().pathname);
   const nav = admin ? ADMIN_NAV : USER_NAV;
+  const mobileNav = nav.filter((n) => !n.wide); // 휴대폰 아래 탭은 칸이 좁아서 나머지는 홈 화면 카드로
   const swap = admin ? { to: '/', label: '사용자 화면', icon: 'user-linear' } : { to: '/admin', label: '관리자', icon: 'shield-user-linear' };
   return (
     <div className="min-h-[100dvh] p-0 md:p-6 lg:p-8">
@@ -91,8 +93,8 @@ export default function Shell({ children }) {
         </div>
       </div>
 
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 glass !rounded-none !rounded-t-3xl grid px-1 pt-2 pb-[max(.5rem,env(safe-area-inset-bottom))]" style={{ gridTemplateColumns: `repeat(${nav.length + 1}, 1fr)` }}>
-        {[...nav, swap].map((n) => (
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 glass !rounded-none !rounded-t-3xl grid px-1 pt-2 pb-[max(.5rem,env(safe-area-inset-bottom))]" style={{ gridTemplateColumns: `repeat(${mobileNav.length + 1}, 1fr)` }}>
+        {[...mobileNav, swap].map((n) => (
           <NavLink key={n.to} to={n.to} end
             className={({ isActive }) => `flex flex-col items-center gap-0.5 py-1.5 rounded-2xl text-[10px] ${navCls(n, isActive && n !== swap, true)}`}>
             <Icon name={n.icon} className="text-xl" />{n.label}

@@ -35,7 +35,7 @@ export default function Dashboard() {
             <button onClick={() => systemOn(!system)} className={`btn ${system ? 'btn-light' : 'btn-dark'}`}>
               <Icon name={system ? 'power-linear' : 'play-bold'} className="text-lg" />{system ? '시스템 정지' : '시스템 시작'}
             </button>
-            <Link to="/" className="btn btn-dark"><Icon name="add-circle-linear" className="text-lg" />단어 표현하기</Link>
+            <Link to="/express" className="btn btn-dark"><Icon name="add-circle-linear" className="text-lg" />단어 표현하기</Link>
           </div>
         } />
 

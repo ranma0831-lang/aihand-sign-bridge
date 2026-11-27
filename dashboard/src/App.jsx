@@ -10,12 +10,13 @@ import Settings from './pages/Settings.jsx';
 import Guide from './pages/Guide.jsx';
 import Chart from './pages/Chart.jsx';
 import Quiz from './pages/Quiz.jsx';
+import Home from './pages/Home.jsx';
 
 export default function App() {
   return (
     <Shell>
       <Routes>
-        <Route path="/" element={<Express />} />
+        <Route path="/" element={<Home />} />
         <Route path="/express" element={<Express />} />
         <Route path="/admin" element={<Dashboard />} />
         <Route path="/learn" element={<Learn />} />

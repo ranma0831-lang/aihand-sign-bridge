@@ -5,7 +5,7 @@ import { Card, CardTitle, Icon } from '../components/ui.jsx';
 
 const STEPS = [
   {
-    to: '/', page: '지문자 표현', title: '단어 보여 주기',
+    to: '/express', page: '지문자 표현', title: '단어 보여 주기',
     items: [
       '입력창에 단어를 적거나 "말해서 바로 표현"을 누르고 말합니다. 2~3글자를 추천해요.',
       '아래 예시 단어를 누르면 바로 시작합니다. 진한 단어는 모든 글자를 로봇 손이 보여 줘요.',
@@ -29,6 +29,15 @@ const STEPS = [
 ];
 
 // 관리자 화면: 메뉴 아래 "관리자 모드"를 누르면 이 메뉴로 바뀐다
+// 서비스 흐름 (홈 시안 B): 보고 → 보여 주기 → 따라 하기 → 맞히기 → 겨루기
+const FLOW = [
+  { to: '/chart', title: '지문자 표', verb: '살펴보기', icon: 'gallery-wide-linear', hint: '손 모양을 먼저 그림으로 봐요' },
+  { to: '/express', title: '지문자 표현', verb: '보여 주기', icon: 'text-square-linear', hint: 'AI Hand가 단어를 지문자로 보여 줘요' },
+  { to: '/learn', title: '학습', verb: '따라 하기', icon: 'book-bookmark-linear', hint: '웹캠 앞에서 내 손으로 따라 해요' },
+  { to: '/quiz', title: '맞히기', verb: '맞히기', icon: 'question-square-linear', hint: 'AI Hand의 손 모양을 보고 글자를 골라요' },
+  { to: '/challenge', title: '도전', verb: '겨루기', icon: 'cup-star-linear', hint: '5글자 연속으로 따라 하고 순위에 올라요' },
+];
+
 const ADMIN = [
   { to: '/admin', page: '통합 관제', text: '손 5대가 모두 연결됐는지, 지금 어느 손이 움직이는지 봅니다. 오른쪽 위가 "시스템 시작"이면 눌러서 켜세요.' },
   { to: '/robots', page: '개별 제어', text: '로봇 손 하나가 이상할 때 씁니다. 글자를 골라 "테스트"를 누르면 그 손만 움직여 봅니다. 오류가 나면 원인을 해결한 뒤 "오류 해제"를 누르세요.' },
@@ -49,6 +58,29 @@ export default function Guide() {
     <>
       <PageHead title="사용법" sub="단어를 입력하면 로봇 손 5대가 차례로 지문자를 보여 주고, 카메라 앞에서 따라 하며 배우는 대시보드입니다." />
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <section className="lg:col-span-12 grid gap-3">
+          <div className="flex flex-wrap items-end gap-2">
+            <h2 className="text-xl font-semibold tracking-tight mr-auto">서비스 흐름 · 보고, 따라 하고, 맞혀 보세요</h2>
+            <span className="text-sm text-mute">순서대로 하지 않아도 돼요. 원하는 화면을 바로 눌러도 됩니다</span>
+          </div>
+          <ol className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+            {FLOW.map((f, i) => (
+              <li key={f.to} className="min-w-0">
+                <Link to={f.to} className="glass p-5 h-full flex flex-col gap-3 group transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-lg active:scale-[.99]">
+                  <div className="flex items-center gap-2">
+                    <span className="grid place-items-center w-9 h-9 rounded-full bg-ink text-white font-bold num shrink-0">{i + 1}</span>
+                    <span className="text-xs font-semibold text-mute">{f.verb}</span>
+                    <Icon name="arrow-right-up-linear" className="ml-auto text-lg text-mute transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  </div>
+                  <Icon name={f.icon} className="text-3xl mt-1" />
+                  <h3 className="text-lg font-bold tracking-tight">{f.title}</h3>
+                  <p className="text-sm text-mute break-keep">{f.hint}</p>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </section>
+
         <Card dark className="lg:col-span-12 flex flex-wrap items-center gap-4">
           <Icon name="stop-circle-bold" className="text-4xl text-bad" />
           <div className="flex-1 min-w-[14rem]">
@@ -58,7 +90,7 @@ export default function Guide() {
           <p className="text-sm text-white/60">"가짜 데이터" 표시는 아직 로봇과 연결되지 않은 연습 상태라는 뜻입니다.</p>
         </Card>
 
-        <h2 className="lg:col-span-12 text-xl font-semibold tracking-tight mt-2">처음이라면 이 순서로</h2>
+        <h2 className="lg:col-span-12 text-xl font-semibold tracking-tight mt-2">화면별 사용법</h2>
         {STEPS.map((s, i) => (
           <Card key={s.to} className="lg:col-span-6 flex flex-col">
             <div className="flex items-center gap-3 mb-4">
