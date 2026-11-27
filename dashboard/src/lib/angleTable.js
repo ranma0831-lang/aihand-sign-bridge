@@ -1,10 +1,10 @@
 // 각도표 (이정민 님 각도표_양식.xlsx 기준, 이기태 님이 실제 손으로 채움)
 // 데이터는 scripts/import-angles.mjs 가 xlsx에서 만든 angleTable.data.js 에 있다:
 //   npm run angles -- 각도표.xlsx   → 커밋·배포하면 팀 전체에 반영
-// 서보 기준(양식): 엄지 펴짐 90 / 굽힘 180, 나머지 손가락 펴짐 90 / 굽힘 0, 손목 90 고정
+// 서보 기준(11/25 이기태 확인본 '손별 기준값'): 엄지 폄 90 / 굽힘 0, 나머지 손가락 폄 140 / 굽힘 0, 손목 90 고정
 import DATA from './angleTable.data.js';
 
-export const TABLE = DATA.table;       // { 글자: { kind, dir, face, hands: [1,2]|[4]|[], angles: [6], status, checker, note } }
+export const TABLE = DATA.table;       // { 글자: { kind, dir, face, hands: [1,2]|[4]|[], hint, angles: [6], status, checker, note } }
 export const KEYS = DATA.order;        // 양식 순서 (자음 14, 모음 17, 숫자 1~10)
 export const HAND_LAYOUT = DATA.hands; // [{ id, dir, face, role }]
 export const TABLE_INFO = { source: DATA.source, generated: DATA.generated };
@@ -46,7 +46,7 @@ export async function fetchSheetTable(url = SHEET_URL) {
   return rowsToTable(parseCsv(await res.text())).table;
 }
 
-export const REST = [90, 90, 90, 90, 90, 90]; // 쉼: 모두 펼침, 손목 정면
+export const REST = [90, 140, 140, 140, 140, 90]; // 쉼: 모두 폄 (손가락 폄 140, 11/25 기준값), 손목 정면
 export const DIRS = ['위', '옆', '아래'];
 export const FACES = ['손바닥', '손등'];
 
@@ -74,12 +74,13 @@ export function rowsToTable(rows) {
       return Number.isFinite(a) ? Math.max(0, Math.min(180, Math.round(a))) : 90;
     });
     order.push(key);
-    const note = get(r, '메모');
+    const who = get(r, '맡는 손');
+    const hands = parseHands(who);
     table[key] = {
       kind: get(r, '종류'), dir: get(r, '손 방향'), face: get(r, '앞면'),
-      // 메모에 '화면 안내'가 있으면(예: ㅁ ㅍ "AI Hand로 못 냄") 맡는 손이 적혀 있어도 화면으로 보여 준다
-      hands: note.includes('화면 안내') ? [] : parseHands(get(r, '맡는 손')), angles,
-      status: get(r, '상태'), checker: get(r, '확인한 사람'), note,
+      // "1,2 (+화면 안내)": 손이 비슷한 모양을 내고 화면 안내도 같이 (11/25 ㅓ ㅕ ㅔ ㅖ, control word_to_sign.SCREEN_HINT)
+      hands, hint: hands.length > 0 && who.includes('화면 안내'), angles,
+      status: get(r, '상태'), checker: get(r, '확인한 사람'), note: get(r, '메모'),
     };
   }
   return { order, table };
@@ -104,7 +105,7 @@ export function assignHands(seq, table) {
     const c = table[s.jamo]?.hands || [];
     const hand = c.length ? c.reduce((a, b) => ((usedAt[b] ?? -1) < (usedAt[a] ?? -1) ? b : a)) : null;
     if (hand) usedAt[hand] = turn++;
-    return { ...s, hand, angles: table[s.jamo]?.angles };
+    return { ...s, hand, hint: !!table[s.jamo]?.hint, angles: table[s.jamo]?.angles };
   });
 }
 

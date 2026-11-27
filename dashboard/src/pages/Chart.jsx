@@ -27,7 +27,7 @@ export default function Chart() {
   // AI Hand가 맡는지: 각도표에 맡는 손이 있으면 손 번호, 없으면 화면 안내
   const who = (k) => {
     const hs = settings.table[k]?.hands || [];
-    return hs.length ? `손 ${hs.join(',')}` : '화면 안내';
+    return hs.length ? `손 ${hs.join(',')}${settings.table[k].hint ? ' + 화면' : ''}` : '화면 안내';
   };
 
   return (

@@ -94,7 +94,7 @@ export default function Settings() {
             <CardTitle icon="list-linear" right={<Pill tone={confirmed === KEYS.length ? 'ok' : 'idle'}>확인됨 {confirmed}/{KEYS.length}</Pill>}>
               각도표 <span className={`text-sm font-normal ${tableFrom.kind === 'error' ? 'text-red-600' : 'text-mute'}`}>· {from}</span>
             </CardTitle>
-            <p className="text-xs text-mute -mt-2 mb-3">서보 기준: 엄지 펴짐 90 / 굽힘 180, 나머지 손가락 펴짐 90 / 굽힘 0, 손목 90 고정. 쌍자음·ㅘ·ㅝ·ㅙ·ㅞ·11 이상은 움직임이 있어 항상 화면 안내.</p>
+            <p className="text-xs text-mute -mt-2 mb-3">서보 기준(11/25): 엄지 폄 90 / 굽힘 0, 나머지 손가락 폄 140 / 굽힘 0, 손목 90 고정. ㅓ ㅕ ㅔ ㅖ는 1·2번 손 + 화면 안내. 쌍자음·ㅘ·ㅝ·ㅙ·ㅞ·11 이상은 움직임이 있어 항상 화면 안내.</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm num">

@@ -1,4 +1,4 @@
-// AI Hand로 못 내는 글자(맡는 손 없음)가 차례가 되면 화면 가운데에 영상·사진을 띄운다
+// AI Hand로 못 내는 글자(맡는 손 없음)나, 손이 비슷한 모양만 내는 글자(hint: ㅓ ㅕ ㅔ ㅖ)가 차례가 되면 화면 가운데에 영상·사진을 띄운다
 // 파일은 public/jamo/<글자>.mp4 → <글자>.png 순서로 찾고, 둘 다 없으면 글자만 크게 보여 준다
 import { useEffect, useState } from 'react';
 import { useSystem } from '../lib/store.jsx';
@@ -10,7 +10,7 @@ const KINDS = ['mp4', 'png'];
 export default function JamoPopup() {
   const { job } = useSystem();
   const { cur } = jobView(job);
-  const jamo = cur && cur.hand == null ? cur.jamo : null;
+  const jamo = cur && (cur.hand == null || cur.hint) ? cur.jamo : null;
   const [kind, setKind] = useState(0); // KINDS 번호, 다 실패하면 KINDS.length
   useEffect(() => setKind(0), [jamo]);
   if (!jamo) return null;
@@ -28,7 +28,7 @@ export default function JamoPopup() {
         </div>
         <p className="text-2xl font-bold mt-4">'{jamo}'</p>
         <p className="text-white/70 text-sm mt-1 flex items-center justify-center gap-1">
-          <Icon name="info-circle-linear" />AI Hand로 불가능한 동작이라 화면으로 대체합니다
+          <Icon name="info-circle-linear" />{cur.hand == null ? 'AI Hand로 불가능한 동작이라 화면으로 대체합니다' : `${cur.hand}번 손은 손가락 모양만 같고 방향이 달라 화면으로 함께 보여 줍니다`}
         </p>
         {kind === 1 && <p className="text-white/40 text-xs mt-2">그림: 국립장애인도서관</p>}
       </div>

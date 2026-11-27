@@ -102,7 +102,7 @@ export default function Express() {
           <div className="flex flex-wrap items-center gap-2 mt-3">
             <span className="text-sm text-mute mr-1">예시</span>
             {EXAMPLES.map((w) => {
-              const ok = makePlan(w).plan.every((p) => p.hand != null);
+              const ok = makePlan(w).plan.every((p) => p.hand != null && !p.hint); // 화면 안내가 섞이면 점선
               return (
                 <button key={w} type="button" disabled={active} onClick={() => { setWord(w); run(w, false); }}
                   title={ok ? '모두 손으로 표현돼요' : '일부 글자는 화면으로 보여 줘요'}

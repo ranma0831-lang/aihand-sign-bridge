@@ -52,15 +52,17 @@ test('각도표: 양식 행 → 표', () => {
   const rows = [
     ['각도표 번호', '맡는 손', '글자', '손 방향(받침대)', '앞면', '서보1 엄지', '서보2 검지', '서보3 중지', '서보4 약지', '서보5 새끼', '서보6 손목', '상태', '확인한 사람', '메모'],
     [1, '4', 'ㄱ', '아래', '손바닥', 90, 90, 0, 0, 0, 90, '확인됨', '이기태', ''],
-    [5, '1,2', 'ㅁ', '위', '손등', 180, 45, 45, 0, 0, 90, '초안', '', 'AI Hand로 못 냄(화면 안내)'],
+    [5, '1,2', 'ㅁ', '위', '손등', 0, 80, 80, 0, 0, 90, '확인됨', '', 'AI Hand로 못 냄(화면 안내) / 11/25: 손으로 가능'],
+    [16, '1,2 (+화면 안내)', 'ㅔ', '위', '손등', 0, 140, 0, 0, 140, 90, '확인됨', '', ''],
     [14, '1,2', 'ㅎ', '위', '손등', 90, 0, 0, 0, 0, 90, '초안', '', ''],
     [17, '없음(화면 안내)', 'ㅓ', '옆', '손등', 135, 45, 0, 0, 0, 90, '초안', '', ''],
     [41, '1,2', 10, '위', '손등', 90, 45, 90, 90, 999, 90, '초안', '', ''],
   ];
   const { order, table } = rowsToTable(rows);
-  assert.deepEqual(order, ['ㄱ', 'ㅁ', 'ㅎ', 'ㅓ', '10']);
-  assert.deepEqual(table['ㄱ'], { kind: '', dir: '아래', face: '손바닥', hands: [4], angles: [90, 90, 0, 0, 0, 90], status: '확인됨', checker: '이기태', note: '' });
-  assert.deepEqual(table['ㅁ'].hands, []); // 메모에 '화면 안내'
+  assert.deepEqual(order, ['ㄱ', 'ㅁ', 'ㅔ', 'ㅎ', 'ㅓ', '10']);
+  assert.deepEqual(table['ㄱ'], { kind: '', dir: '아래', face: '손바닥', hands: [4], hint: false, angles: [90, 90, 0, 0, 0, 90], status: '확인됨', checker: '이기태', note: '' });
+  assert.deepEqual(table['ㅁ'].hands, [1, 2]); // 메모가 아니라 '맡는 손' 칸으로 정함 (11/25)
+  assert.deepEqual([table['ㅔ'].hands, table['ㅔ'].hint], [[1, 2], true]); // 손 + 화면 안내
   assert.deepEqual(table['ㅓ'].hands, []);
   assert.deepEqual(table['ㅎ'].hands, [1, 2]);
   assert.equal(table['10'].angles[4], 180); // 0~180으로 자름
@@ -133,7 +135,7 @@ test('시트 각도표 읽기', async () => {
   const head = ['종류', '글자', '손 방향', '앞면', '맡는 손', '서보1', '서보2', '서보3', '서보4', '서보5', '서보6', '상태', '확인한 사람', '메모'];
   const lines = ['각도표 제목줄,,', head.join(','), ...KEYS.map((k) => {
     const r = TABLE[k];
-    return [r.kind, k, r.dir, r.face, r.hands.length ? r.hands.join(',') : '없음(화면 안내)', ...r.angles, r.status, r.checker, r.note].map(q).join(',');
+    return [r.kind, k, r.dir, r.face, r.hands.length ? r.hands.join(',') + (r.hint ? ' (+화면 안내)' : '') : '없음(화면 안내)', ...r.angles, r.status, r.checker, r.note].map(q).join(',');
   })];
   const { order, table } = rowsToTable(parseCsv(lines.join('\r\n')));
   assert.deepEqual(order, KEYS);
