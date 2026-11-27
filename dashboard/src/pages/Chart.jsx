@@ -14,7 +14,7 @@ const SECTIONS = [
 ];
 
 // 그림이 없으면(배포본에 그림을 안 올린 경우) 글자를 크게 보여 준다
-function SignImage({ k, className = '' }) {
+export function SignImage({ k, className = '' }) {
   const [ok, setOk] = useState(true);
   return ok
     ? <img src={`./jamo/${encodeURIComponent(k)}.png`} alt={`'${k}' 지문자`} onError={() => setOk(false)} className={`aspect-square object-contain bg-white rounded-2xl ${className}`} />

@@ -9,6 +9,7 @@ export const USER_NAV = [
   { to: '/', label: '지문자 표현', icon: 'text-square-linear' },
   { to: '/learn', label: '학습', icon: 'book-bookmark-linear' },
   { to: '/challenge', label: '도전', icon: 'cup-star-linear' },
+  { to: '/quiz', label: '맞히기', icon: 'question-square-linear' },
   { to: '/chart', label: '지문자 표', icon: 'gallery-wide-linear' },
   { to: '/guide', label: '사용법', icon: 'question-circle-linear', tip: true },
 ];

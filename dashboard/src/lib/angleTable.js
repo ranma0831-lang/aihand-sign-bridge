@@ -110,5 +110,17 @@ export function assignHands(seq, table) {
 }
 
 export const isScreen = (table, key) => !(table[key]?.hands?.length);
+
+// 맞히기(5.4) 문제로 낼 수 있는 글자: 손이 맡고, 화면 안내가 따로 필요 없는 글자
+export const quizPool = (table, keys) => keys.filter((k) => table[k]?.hands?.length && !table[k].hint);
+
+// 보기 n개: 정답 + 손가락 각도가 가장 비슷한 글자 둘(ㄹ/ㅌ, ㅂ/4처럼 헷갈리는 짝) + 나머지는 무작위. 순서는 섞는다
+export function quizChoices(target, table, pool, n = 4, rand = Math.random) {
+  const dist = (k) => table[k].angles.reduce((s, a, i) => s + Math.abs(a - table[target].angles[i]), 0) + (table[k].dir === table[target].dir ? 0 : 60);
+  const others = pool.filter((k) => k !== target).map((k) => [k, dist(k) + rand() * 30]).sort((a, b) => a[1] - b[1]).map(([k]) => k);
+  const near = others.slice(0, 2);
+  const rest = others.slice(2).sort(() => rand() - 0.5).slice(0, n - 1 - near.length);
+  return [target, ...near, ...rest].map((k) => [k, rand()]).sort((a, b) => a[1] - b[1]).map(([k]) => k);
+}
 // 칭찬 동작 = 엄지 척(ㅎ) 각도
 export const praiseAngles = (table) => table['ㅎ']?.angles || [90, 0, 0, 0, 0, 90];

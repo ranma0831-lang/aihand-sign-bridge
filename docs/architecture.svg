@@ -1,0 +1,236 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000" font-family="Pretendard, 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#3a3a40"/></marker>
+    <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#8a8a92"/></marker>
+    <style>
+      .t{font-size:15px;fill:#1d1d22}
+      .s{font-size:13px;fill:#5b5b66}
+      .h{font-size:20px;font-weight:800;fill:#141416}
+      .h2{font-size:16px;font-weight:700;fill:#141416}
+      .tag{font-size:12px;font-weight:700}
+      .lab{font-size:13px;fill:#3a3a40;font-weight:600}
+      .code{font-family:Consolas,'D2Coding',monospace;font-size:12.5px;fill:#3a3a40}
+      .ln{stroke:#3a3a40;stroke-width:2;fill:none;marker-end:url(#a)}
+      .lnd{stroke:#8a8a92;stroke-width:2;fill:none;stroke-dasharray:7 6;marker-end:url(#ag)}
+    </style>
+  </defs>
+  <rect width="1600" height="1000" fill="#ffffff"/>
+
+  <!-- 제목 -->
+  <text x="40" y="52" font-size="28" font-weight="800" fill="#141416">AI Hand Sign Bridge 시스템 구성도</text>
+  <text x="40" y="80" class="s" font-size="15">단어 입력 → 자모 나누기 → 손 5대에 나눠 표현 → 웹캠으로 따라 하기 인식 → 정답/오답 피드백</text>
+
+  <!-- 테스트용 블루투스 (점선) -->
+  <path class="lnd" d="M415 110 V100 H1470 V128"/>
+  <text x="760" y="94" class="s">테스트용: 개별 제어 화면에서 Web Bluetooth로 손 1대에 직접 각도 보내기 (각도 확인용)</text>
+
+  <!-- ① 사용자 -->
+  <rect x="40" y="250" width="180" height="250" rx="22" fill="#f4f4f6" stroke="#d7d7dd"/>
+  <circle cx="130" cy="300" r="26" fill="#141416"/>
+  <circle cx="130" cy="293" r="9" fill="#fff"/><path d="M114 316 Q130 300 146 316" stroke="#fff" stroke-width="5" fill="none"/>
+  <text x="130" y="355" class="h2" text-anchor="middle">사용자</text>
+  <text x="130" y="385" class="s" text-anchor="middle">텍스트·음성으로</text>
+  <text x="130" y="403" class="s" text-anchor="middle">단어 입력</text>
+  <text x="130" y="433" class="s" text-anchor="middle">AI Hand 손 모양 보기</text>
+  <text x="130" y="463" class="s" text-anchor="middle">웹캠 앞에서</text>
+  <text x="130" y="481" class="s" text-anchor="middle">따라 하기</text>
+
+  <!-- 웹캠 -->
+  <rect x="40" y="590" width="180" height="80" rx="18" fill="#f4f4f6" stroke="#d7d7dd"/>
+  <text x="130" y="625" class="h2" text-anchor="middle">웹캠</text>
+  <text x="130" y="649" class="s" text-anchor="middle">PC에 연결</text>
+  <path class="ln" d="M130 500 V588"/>
+  <text x="140" y="550" class="lab">손 모양</text>
+
+  <!-- ② 웹 대시보드 -->
+  <rect x="270" y="110" width="290" height="590" rx="26" fill="#eef4ff" stroke="#9db8ec"/>
+  <text x="292" y="146" class="h">웹 대시보드</text>
+  <rect x="478" y="128" width="64" height="24" rx="12" fill="#2f5fd0"/><text x="510" y="145" class="tag" fill="#fff" text-anchor="middle">역할 4</text>
+  <text x="292" y="170" class="s">브라우저 · React · GitHub Pages</text>
+  <g>
+    <rect x="290" y="188" width="250" height="92" rx="14" fill="#fff" stroke="#c8d6f3"/>
+    <text x="306" y="212" class="h2">사용자 화면</text>
+    <text x="306" y="236" class="t">지문자 표현 · 학습 · 도전</text>
+    <text x="306" y="260" class="t">맞히기 · 지문자 표 · 사용법</text>
+    <rect x="290" y="292" width="250" height="92" rx="14" fill="#fff" stroke="#c8d6f3"/>
+    <text x="306" y="316" class="h2">관리자 화면</text>
+    <text x="306" y="340" class="t">통합 관제 · 개별 제어</text>
+    <text x="306" y="364" class="t">통계 · 설정 · 긴급 정지</text>
+    <rect x="290" y="396" width="250" height="68" rx="14" fill="#fff" stroke="#c8d6f3"/>
+    <text x="306" y="420" class="h2">음성 입력 · 음성 안내</text>
+    <text x="306" y="444" class="s">Web Speech (크롬)</text>
+    <rect x="290" y="476" width="250" height="92" rx="14" fill="#fff" stroke="#c8d6f3"/>
+    <text x="306" y="500" class="h2">각도표 · 손 배치</text>
+    <text x="306" y="524" class="s">각도표 xlsx → npm run angles</text>
+    <text x="306" y="546" class="s">손 배정 규칙 = control과 같음</text>
+    <rect x="290" y="580" width="250" height="100" rx="14" fill="#fff" stroke="#c8d6f3"/>
+    <text x="306" y="604" class="h2">기록 · 통계</text>
+    <text x="306" y="628" class="s">인식률 · 반응 시간 · 학습 성공률</text>
+    <text x="306" y="650" class="s">맞히기 정답률 (브라우저에 저장)</text>
+    <text x="306" y="670" class="s">연결 없으면 체험 모드로 동작</text>
+  </g>
+  <path class="ln" d="M220 330 H268"/>
+  <text x="226" y="320" class="lab">입력</text>
+
+  <!-- 대시보드 ⇄ 중앙 PC -->
+  <path class="ln" d="M560 190 H618"/>
+  <path class="ln" d="M618 226 H562"/>
+  <text transform="translate(595 420) rotate(-90)" class="lab">WebSocket · JSON</text>
+
+  <!-- ③ 중앙 PC -->
+  <rect x="620" y="110" width="480" height="590" rx="26" fill="#f1f8f2" stroke="#9fd0a8"/>
+  <text x="642" y="146" class="h">중앙 PC</text>
+  <text x="742" y="146" class="s">Python</text>
+  <rect x="892" y="128" width="190" height="24" rx="12" fill="#2f8f5b"/><text x="987" y="145" class="tag" fill="#fff" text-anchor="middle">역할 1 · 역할 3 · 역할 4</text>
+
+  <rect x="640" y="166" width="440" height="78" rx="14" fill="#fff" stroke="#c4e3c9"/>
+  <text x="656" y="192" class="h2">대시보드 연결 (dashboard_bridge.py)</text>
+  <text x="656" y="214" class="s">WebSocket 서버 :8765 · 대시보드 명령을 control 함수로 바꿈</text>
+  <text x="656" y="233" class="code">express · demo · recognize · stop ↔ step · done · recog</text>
+
+  <g transform="translate(-226 0)">
+  <!-- recognition -->
+  <rect x="866" y="262" width="214" height="418" rx="16" fill="#ffffff" stroke="#c4e3c9"/>
+  <text x="882" y="290" class="h2">인식</text>
+  <text x="930" y="290" class="tag" fill="#2f8f5b">역할 3 · 역할 1</text>
+  <rect x="878" y="304" width="190" height="96" rx="12" fill="#f6fbf7"/>
+  <text x="890" y="326" class="t" font-weight="700">웹캠 판정</text>
+  <text x="890" y="348" class="code">one_loop · CamJudge</text>
+  <text x="890" y="370" class="s">목표 글자와 비교</text>
+  <text x="890" y="389" class="s">→ 정답 / 오답</text>
+  <rect x="878" y="412" width="190" height="96" rx="12" fill="#f6fbf7"/>
+  <text x="890" y="434" class="t" font-weight="700">손 좌표</text>
+  <text x="890" y="456" class="code">MediaPipe Hand</text>
+  <text x="890" y="478" class="s">손 관절 21점</text>
+  <text x="890" y="497" class="s">→ 특징값</text>
+  <rect x="878" y="520" width="190" height="148" rx="12" fill="#f6fbf7"/>
+  <text x="890" y="542" class="t" font-weight="700">글자 분류</text>
+  <text x="890" y="564" class="code">SVM (ksl_classifier)</text>
+  <text x="890" y="586" class="s">글자 / 숫자 모드</text>
+  <text x="890" y="605" class="s">'없음' = 지문자 아님</text>
+  <text x="890" y="624" class="s">처음 보는 사람 90.9%</text>
+  <text x="890" y="643" class="s">(5명, 11/17 기준)</text>
+  <path class="ln" d="M973 410 V400" />
+  <path class="ln" d="M973 518 V508" />
+
+  </g>
+  <g transform="translate(226 0)">
+  <!-- control -->
+  <rect x="640" y="262" width="214" height="418" rx="16" fill="#ffffff" stroke="#c4e3c9"/>
+  <text x="656" y="290" class="h2">control</text>
+  <text x="760" y="290" class="tag" fill="#2f8f5b">역할 1</text>
+  <rect x="652" y="304" width="190" height="96" rx="12" fill="#f6fbf7"/>
+  <text x="664" y="326" class="t" font-weight="700">단어 → 자모</text>
+  <text x="664" y="348" class="code">word_to_sign</text>
+  <text x="664" y="370" class="s">쌍자음·겹모음 나누기</text>
+  <text x="664" y="389" class="s">숫자 1~10</text>
+  <rect x="652" y="412" width="190" height="118" rx="12" fill="#f6fbf7"/>
+  <text x="664" y="434" class="t" font-weight="700">손 배정</text>
+  <text x="664" y="456" class="code">hand_assign</text>
+  <text x="664" y="478" class="s">글자별 맡는 손</text>
+  <text x="664" y="497" class="s">"1,2"는 가장 오래 쉰 손</text>
+  <text x="664" y="516" class="s">각도표_확정.csv</text>
+  <rect x="652" y="542" width="190" height="126" rx="12" fill="#f6fbf7"/>
+  <text x="664" y="564" class="t" font-weight="700">손 명령</text>
+  <text x="664" y="586" class="code">hand_link</text>
+  <text x="664" y="608" class="s">받음 0.3초 안에 없으면</text>
+  <text x="664" y="627" class="s">다시 보냄 (최대 3번)</text>
+  <text x="664" y="646" class="s">동작 끝 받고 다음 글자</text>
+  <path class="ln" d="M747 400 V410"/>
+  <path class="ln" d="M747 530 V540"/>
+
+  </g>
+  <!-- bridge → control / 인식 -->
+  <path class="ln" d="M747 244 V260"/>
+  <path class="ln" d="M973 244 V260"/>
+
+  <!-- 웹캠 → 인식 -->
+  <path class="ln" d="M220 650 H250 V720 H747 V682"/>
+  <text x="400" y="740" class="lab">카메라 영상 (USB)</text>
+
+  <!-- 중앙 PC → 중계 -->
+  <path class="ln" d="M1068 605 H1112 V385 H1158"/>
+  <text transform="translate(1139 640) rotate(-90)" class="lab">USB 시리얼 115200</text>
+
+  <!-- ④ 중계 micro:bit -->
+  <rect x="1160" y="300" width="170" height="170" rx="22" fill="#fff6ea" stroke="#f0c48a"/>
+  <text x="1245" y="336" class="h2" text-anchor="middle">중계 micro:bit</text>
+  <text x="1245" y="358" class="code" text-anchor="middle">gateway.ts</text>
+  <text x="1245" y="380" class="s" text-anchor="middle">USB로 받은 명령을</text>
+  <text x="1245" y="398" class="s" text-anchor="middle">무선으로 모든 손에</text>
+  <text x="1245" y="416" class="s" text-anchor="middle">(무선 그룹 14)</text>
+  <text x="1245" y="434" class="s" text-anchor="middle">손 응답은 PC로</text>
+  <rect x="1188" y="444" width="114" height="20" rx="10" fill="#e98b1c"/><text x="1245" y="459" class="tag" fill="#fff" text-anchor="middle">역할 1</text>
+
+  <!-- 명령 형식 -->
+  <rect x="1146" y="490" width="226" height="120" rx="14" fill="#fafafa" stroke="#e2e2e6"/>
+  <text x="1160" y="514" class="lab">명령 (PC → 손)</text>
+  <text x="1160" y="536" class="code">명령번호,손번호,모양번호</text>
+  <text x="1160" y="560" class="lab">응답 (손 → PC)</text>
+  <text x="1160" y="582" class="code">A,명령번호,손번호 = 받음</text>
+  <text x="1160" y="600" class="code">D,명령번호,손번호 = 동작 끝</text>
+
+  <!-- 중계 ⇄ 손 -->
+  <path class="ln" d="M1330 360 H1376"/>
+  <path class="ln" d="M1376 410 H1332"/>
+  <text x="1338" y="350" class="lab">무선</text>
+
+  <!-- ⑤ AI Hand × 5 -->
+  <rect x="1380" y="110" width="190" height="590" rx="26" fill="#fff6ea" stroke="#f0c48a"/>
+  <text x="1398" y="146" class="h">AI Hand × 5</text>
+  <rect x="1398" y="668" width="64" height="22" rx="11" fill="#e98b1c"/><text x="1430" y="684" class="tag" fill="#fff" text-anchor="middle">역할 2</text>
+  <text x="1398" y="170" class="s">손마다 micro:bit</text>
+  <g class="t">
+    <rect x="1396" y="196" width="158" height="58" rx="12" fill="#fff" stroke="#f3d6ad"/><text x="1410" y="221" font-weight="700">손 1</text><text x="1410" y="242" class="s">위 · 손등</text>
+    <rect x="1396" y="262" width="158" height="58" rx="12" fill="#fff" stroke="#f3d6ad"/><text x="1410" y="287" font-weight="700">손 2</text><text x="1410" y="308" class="s">위 · 손등</text>
+    <rect x="1396" y="328" width="158" height="58" rx="12" fill="#fff" stroke="#f3d6ad"/><text x="1410" y="353" font-weight="700">손 3</text><text x="1410" y="374" class="s">옆 · 손바닥</text>
+    <rect x="1396" y="394" width="158" height="58" rx="12" fill="#fff" stroke="#f3d6ad"/><text x="1410" y="419" font-weight="700">손 4</text><text x="1410" y="440" class="s">아래 · 손바닥</text>
+    <rect x="1396" y="460" width="158" height="58" rx="12" fill="#fff" stroke="#f3d6ad"/><text x="1410" y="485" font-weight="700">손 5</text><text x="1410" y="506" class="s">위 · 손바닥</text>
+  </g>
+  <text x="1398" y="550" class="s">hand.ts: 모양 번호 →</text>
+  <text x="1398" y="569" class="s">서보 6개 각도</text>
+  <text x="1398" y="588" class="s">(엄지~새끼, 손목)</text>
+  <text x="1398" y="614" class="s">Startbit 확장 보드</text>
+  <text x="1398" y="640" class="s">못 내는 방향의 글자는</text>
+  <text x="1398" y="659" class="s">대시보드 그림으로 안내</text>
+
+  <!-- 준비 단계 -->
+  <rect x="40" y="770" width="1530" height="200" rx="24" fill="#f7f7f9" stroke="#e2e2e6"/>
+  <text x="62" y="804" class="h2">준비 단계 (미리 만들어 두는 것)</text>
+
+  <g>
+    <rect x="62" y="822" width="190" height="124" rx="14" fill="#fff" stroke="#e2e2e6"/>
+    <text x="76" y="846" class="t" font-weight="700">팀원 손 영상</text>
+    <text x="76" y="868" class="s">촬영 프로그램</text>
+    <text x="76" y="887" class="s">41글자 + '없음' 동작</text>
+    <text x="76" y="906" class="s">글자별 기록 json 같이 저장</text>
+    <text x="76" y="932" class="tag" fill="#5b5b66">전원</text>
+    <path class="ln" d="M252 884 H282"/>
+    <rect x="284" y="822" width="190" height="124" rx="14" fill="#fff" stroke="#e2e2e6"/>
+    <text x="298" y="846" class="t" font-weight="700">좌표 추출 → 학습</text>
+    <text x="298" y="868" class="code">extract_from_videos</text>
+    <text x="298" y="887" class="code">train.py</text>
+    <text x="298" y="906" class="s">사람별 교차검증</text>
+    <text x="298" y="932" class="tag" fill="#2f8f5b">역할 3 · 역할 1</text>
+    <path class="ln" d="M474 884 H504"/>
+    <rect x="506" y="822" width="190" height="124" rx="14" fill="#fff" stroke="#e2e2e6"/>
+    <text x="520" y="846" class="t" font-weight="700">인식 모델</text>
+    <text x="520" y="868" class="code">ksl_classifier.joblib</text>
+    <text x="520" y="892" class="s">→ 중앙 PC 인식에서 사용</text>
+  </g>
+
+  <g>
+    <rect x="760" y="822" width="230" height="124" rx="14" fill="#fff" stroke="#e2e2e6"/>
+    <text x="774" y="846" class="t" font-weight="700">각도표 xlsx (11/25 확인본)</text>
+    <text x="774" y="868" class="s">41글자를 실제 손으로 확인</text>
+    <text x="774" y="887" class="s">글자별 서보 6개 각도 · 맡는 손</text>
+    <text x="774" y="906" class="s">손가락 폄 140 / 굽힘 0</text>
+    <text x="774" y="932" class="tag" fill="#e98b1c">역할 2</text>
+    <path class="ln" d="M990 852 H1040"/>
+    <path class="ln" d="M990 884 H1040"/>
+    <path class="ln" d="M990 916 H1040"/>
+    <text x="1046" y="857" class="t">손 micro:bit 모양표 <tspan class="code">hand.ts</tspan></text>
+    <text x="1046" y="889" class="t">중앙 PC 손 배정 <tspan class="code">각도표_확정.csv</tspan></text>
+    <text x="1046" y="921" class="t">대시보드 각도표 <tspan class="code">npm run angles</tspan></text>
+  </g>
+</svg>

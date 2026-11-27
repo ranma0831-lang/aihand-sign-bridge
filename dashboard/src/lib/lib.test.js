@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { toJamo } from './hangul.js';
 import { summary, byDay, byLetter } from './stats.js';
-import { assignHands, rowsToTable, rowsToHands, TABLE, KEYS } from './angleTable.js';
+import { assignHands, quizChoices, quizPool, rowsToTable, rowsToHands, TABLE, KEYS } from './angleTable.js';
 
 const j = (w) => toJamo(w).seq.map((x) => x.jamo).join('');
 
@@ -45,6 +45,17 @@ test('통계', () => {
   assert.equal(d[6].count, 4); // 오늘: 학습 3 + 표현 1 (테스트 제외)
   assert.equal(d[5].count, 1);
   assert.deepEqual(byLetter(log, ['ㄱ', 'ㄴ']).map((e) => e.rate), [50, 0]);
+});
+
+test('맞히기: 문제 글자와 보기', () => {
+  const pool = quizPool(TABLE, KEYS);
+  assert.ok(pool.includes('ㄹ') && !pool.includes('ㅓ')); // ㅓ는 손 + 화면 안내라 문제에서 뺌
+  for (let i = 0; i < 50; i++) {
+    const c = quizChoices('ㄹ', TABLE, pool);
+    assert.equal(c.length, 4);
+    assert.equal(new Set(c).size, 4);
+    assert.ok(c.includes('ㄹ') && c.includes('ㅌ')); // 같은 손 모양인 ㅌ은 항상 보기에
+  }
 });
 
 test('각도표: 양식 행 → 표', () => {

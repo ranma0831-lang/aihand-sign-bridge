@@ -9,6 +9,7 @@ import Analytics from './pages/Analytics.jsx';
 import Settings from './pages/Settings.jsx';
 import Guide from './pages/Guide.jsx';
 import Chart from './pages/Chart.jsx';
+import Quiz from './pages/Quiz.jsx';
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/guide" element={<Guide />} />
         <Route path="/chart" element={<Chart />} />
+        <Route path="/quiz" element={<Quiz />} />
       </Routes>
     </Shell>
   );
